@@ -1,0 +1,13 @@
+first_19 = ['/driver/blink', '/driver/eye_open', '/driver/eye_opening_rate',
+       '/driver/face_pitch', '/driver/face_roll', '/driver/face_yaw',
+       '/driver/gaze_horizontal', '/driver/gaze_vertical',
+       '/gps_m2/distance/from_last_intersection',
+       '/gps_m2/distance/to_next_intersection', '/gps_m2/link_id',
+       '/gps_m2/road/curvature', '/gps_m2/road/intersection',
+       '/gps_m2/road/lanes', '/gps_m2/road/traffic_light', '/gps_m2/road/type',
+       '/gps_m2/road/width', '/gps_m2/vehicle/acceleration',
+       '/gps_m2/vehicle/back_state', '/gps_m2/vehicle/direction',
+       '/gps_m2/vehicle/gnss', '/gps_m2/vehicle/gnss_reliability',
+       '/gps_m2/vehicle/movement', '/gps_m2/vehicle/pitch_angle',
+       '/gps_m2/vehicle/speed', '/gps_m2/vehicle/turn_state',
+       '/gps_m2/vehicle/yaw_rate']
