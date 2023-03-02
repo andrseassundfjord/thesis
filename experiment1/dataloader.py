@@ -4,58 +4,47 @@ import pandas as pd
 import torch
 import os
 import pickle
+import math
+import matplotlib.pyplot as plt
 
-class Dataloader:
+def get_min_max_timestamps(series):
+    min, max = series[0].index[0], series[0].index[-1]
+    for i in series.index:
+        if series[i].index[0] < min: min = series[i].index[0]
+        if series[i].index[-1] > max : max = series[i].index[-1]
+    return min, max
 
-    def __init__(self, path):
-        self.path = path
-        self.filenames = os.listdir(path)
-        self.n_files = len(self.filenames)
+def compare_timestamps():
+    baseline = pd.read_csv("results/test_baseline.csv")
+    test = pd.read_csv("results/test2.csv")
+    baseline = baseline.set_index(baseline["Unnamed: 0"])
+    test = test.set_index(test["Unnamed: 0"])
+    plt.plot(baseline.index, baseline["data/driver/eye_opening_rate"], color="red", marker="o")
+    plt.plot(test.index, test["data/driver/eye_opening_rate"], ls="--", color="blue")
+    plt.savefig("results/compare_timestamps")
 
-def get_feature_from_pickle(path, feature_name, save_path="balanced_pickles", n_samples = 200):
+def save_single_df(path, n_samples = 200):
         """
-
+        Reformat pickled series to single dataframe, with specified number of samples.
         """
         files = os.listdir(path)
-        features, labels = [], []
         for filename in files:
-            unpickled_df = pd.read_pickle(path + "/" + filename)
-            index = unpickled_df.index
-            feature = np.zeros(n_samples)
-            if feature_name in index:
-                feature = unpickled_df[feature_name]
-                print(feature.shape)
-                feature = feature.resample(n_samples).mean()
-                print(feature.shape)
-                feature = feature.to_numpy().reshape(feature.shape[0])
-                return
-
-            features.append(feature)
-            label = filename.split("_")[-1].split(".")[0]
-            labels.append(label)
-        features = np.array(features)
-        labels = np.array(labels)
-        print(labels)
-        print(features)
-        return features, labels
-
-def example():
-    # create a sample series with Linux timestamps
-    data = [10, 20, 30, 40, 50]
-    timestamps = [1623750000, 1623750100, 1623750200, 1623750300, 1623750400]
-    series = pd.Series(data=data, index=timestamps)
-    # convert Linux timestamps to DatetimeIndex
-    series.index = pd.to_datetime(series.index, unit='s')
-    # resample the series to have 100 samples
-    resampled_series = series.resample('L').mean()
-    # interpolate to fill any missing values
-    resampled_series = resampled_series.interpolate(method='linear')
-    # resample to final number of samples
-    final_resampled_series = resampled_series.iloc[::len(resampled_series)//100]
+            series = pd.read_pickle(path + "/" + filename)
+            series = series.apply(lambda df: df.set_index(pd.to_datetime(df.index, unit='ns')))
+            min, max = get_min_max_timestamps(series)
+            time_range = pd.date_range(start=min, end=max, periods=n_samples)
+            interval = (max - min) / (n_samples - 1)
+            df = pd.DataFrame()
+            for df_name in series.index:
+                df = df.join(series[df_name].add_suffix(df_name), how = "outer")
+            df.to_csv("results/test_baseline.csv")
+            resampled_df = df.resample(interval).mean(numeric_only = True).interpolate()
+            resampled_df.to_csv("results/test2.csv")
+            print(resampled_df.index)
+            return
+            #resampled_df.to_pickle("single_df_pickles/{}.pkl".format(filename))
 
 if __name__ == "__main__":
-    df = pd.DataFrame({"A": [1, 2], "B": [3.0, 4.5]})
-    print(df.resample(10).pad())
-    
-    #path = "/work5/share/NEDO/nedo-2019/data/processed_rosbags_topickles/fixed_pickles"
-    #get_feature_from_pickle(path, '/driver/blink')
+    path = "/work5/share/NEDO/nedo-2019/data/processed_rosbags_topickles/fixed_pickles"
+    #save_single_df(path)
+    compare_timestamps()
