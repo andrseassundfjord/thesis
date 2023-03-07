@@ -14,7 +14,7 @@ def get_min_max_timestamps(series):
         if series[i].index[-1] > max : max = series[i].index[-1]
     return min, max
 
-def compare_timestamps():
+def plot_compare_timestamps():
     baseline = pd.read_csv("results/test_baseline.csv")
     test = pd.read_csv("results/test2.csv")
     baseline = baseline.set_index(baseline["Unnamed: 0"])
@@ -44,7 +44,66 @@ def save_single_df(path, n_samples = 200):
             return
             #resampled_df.to_pickle("single_df_pickles/{}.pkl".format(filename))
 
+def get_dataset_statistics(path, savepath):
+    files = os.listdir(path)
+    n_files = len(files)
+    feature_statistics = pd.DataFrame(index = [
+        "n_samples", "min_value", "max_value", 
+        "type", "isnumber", "n_columns", "n_present",
+        "n_missing", "mean", "median", "std"
+        ])
+    class_statistics = pd.DataFrame(index = range(1, 15))
+    class_statistics["class_counter"] = np.zeros(14)
+    for filename in files:
+        series = pd.read_pickle(path + "/" + filename)
+        label = filename.split(".")[0].split("_")[-1]
+        class_statistics["class_counter"][int(label)] += 1
+        for df_name in series.index:
+            if df_name not in feature_statistics.columns:
+                val_type = str(type(series[df_name].to_numpy().flatten()[0]))
+                isnumber = "float" in val_type or "int" in val_type
+                feature_statistics[df_name] = [[], math.inf, 0, val_type, isnumber, len(series[df_name].columns), 0, 0, 0, 0, 0]
+            feature_statistics[df_name]["n_samples"].append(len(series[df_name]))
+            feature_statistics = feature_statistics.copy()
+            if feature_statistics[df_name]["isnumber"] and feature_statistics[df_name]["n_columns"] == 1:
+                agg = series[df_name].agg(["min", "max"]).to_numpy().flatten()
+                min_val, max_val = agg[0], agg[1]
+                if min_val < feature_statistics[df_name]["min_value"]: feature_statistics[df_name]["min_value"] = min_val 
+                if max_val > feature_statistics[df_name]["max_value"]: feature_statistics[df_name]["max_value"] = max_val
+    for col in feature_statistics.columns:
+        n_samples = feature_statistics[col]["n_samples"]
+        feature_statistics[col]["n_present"] += len(n_samples)
+        feature_statistics[col]["n_missing"] += (n_files - len(n_samples))
+        feature_statistics[col]["mean"] += np.mean(n_samples)
+        feature_statistics[col]["median"] += np.median(n_samples)
+        feature_statistics[col]["std"] += np.std(n_samples)
+    feature_statistics.to_csv(savepath + "feature_statistics.csv")
+    class_statistics.to_csv(savepath + "class_statistics.csv")
+
+def plot_statistics(path="results/"):
+    feature_stats = pd.read_csv(path + "feature_statistics.csv")
+    class_stats = pd.read_csv(path + "class_statistics.csv")
+    # Plot class stats
+    plt.bar(range(1, 15), class_stats["class_counter"])
+    plt.savefig(path + "class_stats")
+    plt.clf()
+    # Plot mean
+    print(feature_stats)
+    plt.bar(range(300), feature_stats.loc["mean"])
+    plt.savefig(path + "feature_stats_mean_samples")
+    plt.clf()
+    # Plot std
+    plt.bar(range(300), feature_stats["std"])
+    plt.savefig(path + "feature_stats_std_samples")
+    plt.clf()
+    # Plot number of times feature is present
+    plt.bar(range(300), feature_stats["n_present"])
+    plt.savefig(path + "feature_stats_present_samples")
+    plt.clf()
+
 if __name__ == "__main__":
     path = "/work5/share/NEDO/nedo-2019/data/processed_rosbags_topickles/fixed_pickles"
     #save_single_df(path)
-    compare_timestamps()
+    #compare_timestamps()
+    #get_dataset_statistics(path, "results/")
+    plot_statistics()
