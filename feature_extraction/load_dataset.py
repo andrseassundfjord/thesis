@@ -11,11 +11,49 @@ from torch.utils.data import ConcatDataset
 from torchvision import transforms
 import random
 import pandas as pd
+import math
 
-class VideoDataset(Dataset):
+import ffmpeg
+
+class VideoDataset_ffmpeg(Dataset):
     def __init__(self, file_paths):
         self.file_paths = file_paths
-        self.frame_counter = {}
+
+        # Set output video resolution to 480p
+        self.resolution = '854x480'
+
+        # Set output video bit rate to 500 kbps
+        self.bitrate = '500k'
+
+    def __getitem__(self, idx):
+        # Get the file path of the video
+        path = self.file_paths[idx]
+
+        # Create a video stream and set the resolution and bit rate
+        stream = ffmpeg.input(path).video.filter('scale', self.resolution).filter('bitrate', self.bitrate)
+
+        # Create an output stream with H.264 video codec and AAC audio codec
+        output = ffmpeg.output(stream, 'pipe:', format='rawvideo', pix_fmt='rgb24')
+
+        # Run the ffmpeg command and read the output as a numpy array
+        out, _ = ffmpeg.run(output, capture_stdout=True)
+        video = np.frombuffer(out, np.uint8).reshape([-1, 480, 854, 3])
+
+        # Normalize pixel values to [0, 1]
+        video = video.astype(np.float32) / 255.0
+
+        # Return the processed video
+        return video
+
+    def __len__(self):
+        return len(self.file_paths)
+
+class VideoDataset(Dataset):
+    def __init__(self, file_paths, frame_len = 32, size = 16):
+        self.file_paths = file_paths
+        self.num_frames = {}
+        self.frame_len = frame_len
+        self.size = size # Height and width
 
     def __len__(self):
         return len(self.file_paths)
@@ -23,23 +61,33 @@ class VideoDataset(Dataset):
     def __getitem__(self, idx):
         cap = cv2.VideoCapture(self.file_paths[idx])
         frames = []
+        read_frames = []
         while True:
             ret, frame = cap.read()
             if not ret:
                 break
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            frame = cv2.resize(frame, (128, 128))
-            frames.append(frame)
+            read_frames.append(frame)
+        n_frames = len(read_frames)
+        counter = 0
+        for frame in read_frames:
+            # Oversample, often giving us too many samples
+            if counter % math.floor(n_frames / self.frame_len) == 0:
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                frame = cv2.resize(frame, (self.size, self.size))
+                frames.append(frame)
+            counter += 1
+        frames = [frames[i] for i in sorted(random.sample(range(len(frames)), self.frame_len))]
         cap.release()
         video = np.stack(frames)
-        while len(video) < 182:
-            empty_frame = np.zeros_like(video[0])  # Create an empty frame with the same shape as the first frame
-            video = np.concatenate((video, empty_frame[np.newaxis, ...]), axis=0)  # Append the empty frame to the end of the video array
-        #video = np.transpose(video, (1, 3, 128, 128)) # Shape: (num_frames, num_channels, height, width)
+        if n_frames in self.num_frames:
+            self.num_frames[n_frames] += 1
+        else: 
+            self.num_frames[n_frames] = 1
+        video = np.transpose(video, (3, 0, 1, 2)) # new order of shape: (num_channels, num_frames, height, width)
         video = torch.from_numpy(video).float() / 255.0 # Normalize pixel values to [0, 1]
         return video
 
-class TimeseriesDataset(Dataset):
+class RosbagTimeseriesDataset(Dataset):
     def __init__(self, bag_file_paths, topic_name):
         self.bag_file_paths = bag_file_paths
         self.topic_name = topic_name
@@ -68,13 +116,12 @@ class DataFrameTimeseriesDataset(Dataset):
 
     def __getitem__(self, idx):
         data = self.dataframes[idx]
-
         # Extract the timestamp column and convert to a numpy array
         timestamps = data.index.values.astype(np.int64) // 10 ** 9
-
+        # Use the timestamps for anything?
         # Extract the data columns and convert to a numpy array
         data = data.values.astype(np.float32)
-        return timestamps, data
+        return data
 
 def load_data(folder_path, video_path):
     class_dict = {}
@@ -91,7 +138,7 @@ def load_data(folder_path, video_path):
                 class_dict[label] = [[], []]
             missing_features = all_features - set(sample.columns)
             for feature in missing_features:
-                sample[feature] = pd.Series(dtype='float64')
+                sample[feature] = pd.Series(dtype='float32')
                 sample = sample.copy()
             sample_sorted = sample.sort_index(axis = 1)
             class_dict[label][0].append(sample_sorted)
@@ -131,24 +178,33 @@ def split_data(class_dict, train_ratio=0.7, batch_size = 32, save = False):
     timeseries_dataset_train = DataFrameTimeseriesDataset(timeseries_list_train)
     timeseries_dataset_test = DataFrameTimeseriesDataset(timeseries_list_train)
     # Concat datasets
-    train_dataset = ConcatDataset([video_dataset_train, timeseries_dataset_train])
-    test_dataset = ConcatDataset([video_dataset_test, timeseries_dataset_test])
+    #train_dataset = ConcatDataset([video_dataset_train, timeseries_dataset_train])
+    #test_dataset = ConcatDataset([video_dataset_test, timeseries_dataset_test])
     # Make dataloaders
-    train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-    test_dataloader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+    #train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+    #test_dataloader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+    video_train_dataloader = DataLoader(video_dataset_train, batch_size=batch_size, shuffle=True)
+    video_test_dataloader = DataLoader(video_dataset_test, batch_size=batch_size, shuffle=False)
+    timeseries_train_dataloader = DataLoader(timeseries_dataset_train, batch_size=batch_size, shuffle=True)
+    timeseries_test_dataloader = DataLoader(timeseries_dataset_test, batch_size=batch_size, shuffle=False)
     if save:
-        torch.save(train_dataloader, 'dataloaders/train_dataloader.pth')
-        torch.save(test_dataloader, 'dataloaders/test_dataloader.pth')
-    return train_dataloader, test_dataloader
+        torch.save(video_train_dataloader, 'dataloaders/video_train_dataloader.pth')
+        torch.save(video_test_dataloader, 'dataloaders/video_test_dataloader.pth')
+        torch.save(timeseries_train_dataloader, 'dataloaders/timeseries_train_dataloader.pth')
+        torch.save(timeseries_test_dataloader, 'dataloaders/timeseries_test_dataloader.pth')
+    return video_train_dataloader, video_test_dataloader, timeseries_train_dataloader, timeseries_test_dataloader
 
 def get_dataloaders(pickle_path, video_path, train_ratio = 0.7, batch_size = 32, save = False, load = False):
     if load:
-        train_dataloader = torch.load('dataloaders/train_dataloader.pth')
-        test_dataloader = torch.load('dataloaders/test_dataloader.pth')
-        return train_dataloader, test_dataloader
+        video_train_dataloader = torch.load('dataloaders/video_train_dataloader.pth')
+        video_test_dataloader = torch.load('dataloaders/video_test_dataloader.pth')
+        timeseries_train_dataloader = torch.load('dataloaders/timeseries_train_dataloader.pth')
+        timeseries_test_dataloader = torch.load('dataloaders/timeseries_test_dataloader.pth')        
+        return video_train_dataloader, video_test_dataloader, timeseries_train_dataloader, timeseries_test_dataloader
     class_dict = load_data(pickle_path, video_path)
     return split_data(class_dict, train_ratio = train_ratio, batch_size = batch_size, save = save)
 
 if __name__ == "__main__":
+    print("Start")
     class_dict = load_data('../experiment1/resampled_pickles', "/work5/share/NEDO/nedo-2019/data/01_driving_data/movie")
     #train_loader, test_loader = split_data(class_dict)
