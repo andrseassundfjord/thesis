@@ -49,43 +49,50 @@ class VideoDataset_ffmpeg(Dataset):
         return len(self.file_paths)
 
 class VideoDataset(Dataset):
-    def __init__(self, file_paths, frame_len = 32, size = 16):
+    def __init__(self, file_paths, frame_len = 64, size = 128):
         self.file_paths = file_paths
         self.num_frames = {}
         self.frame_len = frame_len
         self.size = size # Height and width
+        self.videos = self.get_videos()
 
     def __len__(self):
         return len(self.file_paths)
 
     def __getitem__(self, idx):
-        cap = cv2.VideoCapture(self.file_paths[idx])
-        frames = []
-        read_frames = []
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
-            read_frames.append(frame)
-        n_frames = len(read_frames)
-        counter = 0
-        for frame in read_frames:
-            # Oversample, often giving us too many samples
-            if counter % math.floor(n_frames / self.frame_len) == 0:
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                frame = cv2.resize(frame, (self.size, self.size))
-                frames.append(frame)
-            counter += 1
-        frames = [frames[i] for i in sorted(random.sample(range(len(frames)), self.frame_len))]
-        cap.release()
-        video = np.stack(frames)
-        if n_frames in self.num_frames:
-            self.num_frames[n_frames] += 1
-        else: 
-            self.num_frames[n_frames] = 1
-        video = np.transpose(video, (3, 0, 1, 2)) # new order of shape: (num_channels, num_frames, height, width)
-        video = torch.from_numpy(video).float() / 255.0 # Normalize pixel values to [0, 1]
-        return video
+        return self.videos[idx]
+
+    def get_videos(self):
+        videos = []
+        for idx, _ in enumerate(self.file_paths): 
+            cap = cv2.VideoCapture(self.file_paths[idx])
+            frames = []
+            read_frames = []
+            while True:
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                read_frames.append(frame)
+            n_frames = len(read_frames)
+            counter = 0
+            for frame in read_frames:
+                # Oversample, often giving us too many samples
+                if counter % math.floor(n_frames / self.frame_len) == 0:
+                    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    frame = cv2.resize(frame, (self.size, self.size))
+                    frames.append(frame)
+                counter += 1
+            frames = [frames[i] for i in sorted(random.sample(range(len(frames)), self.frame_len))]
+            cap.release()
+            video = np.stack(frames)
+            if n_frames in self.num_frames:
+                self.num_frames[n_frames] += 1
+            else: 
+                self.num_frames[n_frames] = 1
+            video = np.transpose(video, (3, 0, 1, 2)) # new order of shape: (num_channels, num_frames, height, width)
+            video = torch.from_numpy(video).float() / 255.0 # Normalize pixel values to [0, 1]
+            videos.append(video)
+        return videos
 
 class RosbagTimeseriesDataset(Dataset):
     def __init__(self, bag_file_paths, topic_name):

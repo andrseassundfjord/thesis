@@ -1,0 +1,104 @@
+Using device: cuda
+Start training
+Time taken: 24.17 seconds
+Epoch: 0 	 Train Loss: 59735146907.913330	 Test Loss: 231398.237963
+Time taken: 44.59 seconds
+Epoch: 1 	 Train Loss: 218544.756000	 Test Loss: 209979.730864
+Time taken: 66.32 seconds
+Epoch: 2 	 Train Loss: 205605.025067	 Test Loss: 205073.545679
+Time taken: 87.74 seconds
+Epoch: 3 	 Train Loss: 193888.187600	 Test Loss: 190519.006173
+Time taken: 107.96 seconds
+Epoch: 4 	 Train Loss: 179853.140667	 Test Loss: 175319.079012
+Time taken: 128.07 seconds
+Epoch: 5 	 Train Loss: 172861.968400	 Test Loss: 169323.335031
+Time taken: 148.53 seconds
+Epoch: 6 	 Train Loss: 168163.100533	 Test Loss: 165635.188889
+Time taken: 168.29 seconds
+Epoch: 7 	 Train Loss: 165224.555333	 Test Loss: 163556.166204
+Time taken: 188.73 seconds
+Epoch: 8 	 Train Loss: 162201.702000	 Test Loss: 159575.350463
+Time taken: 208.41 seconds
+Epoch: 9 	 Train Loss: 159551.687333	 Test Loss: 160052.070679
+Time taken: 228.64 seconds
+Epoch: 10 	 Train Loss: 157328.548800	 Test Loss: 157663.427778
+Time taken: 248.36 seconds
+Epoch: 11 	 Train Loss: 155077.133467	 Test Loss: 154175.550309
+Time taken: 268.30 seconds
+Epoch: 12 	 Train Loss: 154000.435067	 Test Loss: 151579.451080
+Time taken: 288.53 seconds
+Epoch: 13 	 Train Loss: 151392.558533	 Test Loss: 150759.983179
+Time taken: 308.43 seconds
+Epoch: 14 	 Train Loss: 149882.720267	 Test Loss: 147782.656636
+Time taken: 328.13 seconds
+Epoch: 15 	 Train Loss: 147115.770533	 Test Loss: 144786.797531
+Time taken: 348.16 seconds
+Epoch: 16 	 Train Loss: 144661.799733	 Test Loss: 145733.714043
+Time taken: 367.80 seconds
+Epoch: 17 	 Train Loss: 142098.079067	 Test Loss: 139712.896759
+Time taken: 387.43 seconds
+Epoch: 18 	 Train Loss: 140759.481600	 Test Loss: 138582.365123
+Time taken: 407.25 seconds
+Epoch: 19 	 Train Loss: 137839.700667	 Test Loss: 137009.199074
+Time taken: 426.55 seconds
+Epoch: 20 	 Train Loss: 136013.630933	 Test Loss: 140591.723765
+Time taken: 445.94 seconds
+Epoch: 21 	 Train Loss: 135955.581600	 Test Loss: 132958.554321
+Time taken: 465.44 seconds
+Epoch: 22 	 Train Loss: 134205.362000	 Test Loss: 133041.547531
+Time taken: 484.97 seconds
+Epoch: 23 	 Train Loss: 131081.363333	 Test Loss: 129241.100463
+Time taken: 504.21 seconds
+Epoch: 24 	 Train Loss: 130404.474800	 Test Loss: 131025.892130
+Time taken: 523.73 seconds
+Epoch: 25 	 Train Loss: 129628.073467	 Test Loss: 127971.148920
+Time taken: 543.41 seconds
+Epoch: 26 	 Train Loss: 127625.229200	 Test Loss: 127396.015741
+Time taken: 562.96 seconds
+Epoch: 27 	 Train Loss: 125723.565067	 Test Loss: 127028.534877
+Time taken: 582.20 seconds
+Epoch: 28 	 Train Loss: 126172.615467	 Test Loss: 125909.837037
+Time taken: 601.87 seconds
+Epoch: 29 	 Train Loss: 124735.771733	 Test Loss: 125290.899228
+Time taken: 621.62 seconds
+Epoch: 30 	 Train Loss: 123102.028000	 Test Loss: 123284.963889
+Time taken: 641.33 seconds
+Epoch: 31 	 Train Loss: 121895.937733	 Test Loss: 124162.785802
+Time taken: 660.67 seconds
+Epoch: 32 	 Train Loss: 121326.562533	 Test Loss: 121601.048302
+Time taken: 680.59 seconds
+Epoch: 33 	 Train Loss: 121047.466933	 Test Loss: 123288.250309
+Time taken: 700.28 seconds
+Epoch: 34 	 Train Loss: 119573.662800	 Test Loss: 120250.949228
+Time taken: 719.63 seconds
+Epoch: 35 	 Train Loss: 119871.709333	 Test Loss: 121954.030401
+Time taken: 739.14 seconds
+Epoch: 36 	 Train Loss: 118876.157733	 Test Loss: 120145.324074
+Time taken: 759.04 seconds
+Epoch: 37 	 Train Loss: 117654.782400	 Test Loss: 118656.490586
+Time taken: 778.62 seconds
+Epoch: 38 	 Train Loss: 116942.202933	 Test Loss: 119140.075463
+Time taken: 798.13 seconds
+Epoch: 39 	 Train Loss: 116313.992000	 Test Loss: 118331.351080
+Time taken: 818.24 seconds
+Epoch: 40 	 Train Loss: 115784.836000	 Test Loss: 119155.779167
+Time taken: 838.09 seconds
+Epoch: 41 	 Train Loss: 115548.282133	 Test Loss: 118812.985957
+Time taken: 857.45 seconds
+Epoch: 42 	 Train Loss: 114955.089467	 Test Loss: 117244.383179
+Time taken: 876.97 seconds
+Epoch: 43 	 Train Loss: 114668.079533	 Test Loss: 116988.560340
+Time taken: 896.78 seconds
+Epoch: 44 	 Train Loss: 113933.412267	 Test Loss: 118164.331944
+Time taken: 916.34 seconds
+Epoch: 45 	 Train Loss: 113633.341600	 Test Loss: 116130.568364
+Time taken: 935.76 seconds
+Epoch: 46 	 Train Loss: 112891.706067	 Test Loss: 116241.745370
+Time taken: 955.31 seconds
+Epoch: 47 	 Train Loss: 112563.499867	 Test Loss: 115579.030556
+Time taken: 975.53 seconds
+Epoch: 48 	 Train Loss: 111233.511667	 Test Loss: 116252.790278
+Time taken: 995.01 seconds
+Epoch: 49 	 Train Loss: 111482.560600	 Test Loss: 117310.002006
+Finished training
+Time taken: 995.01 seconds

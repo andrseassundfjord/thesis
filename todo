@@ -1,0 +1,58 @@
+- Things to test VideoVAE:
+    - resize video to 256x256, compare
+    - reconstruct video to see result
+- Things to test MVAE:
+    - bigger batch size
+- Things to test TimeseriesVAE:
+    - first baseline, all inputs
+    - remove uneccesary featueres, actually run 
+    - mean imputation, conditional imputation, Variational autoencoder imputation
+    - normalize values
+    - tune hyperparameters
+    - distribution based imputation vs mean imputation vs 0 vs -1
+    - interpolation vs ffill vs no fill
+
+Learning rate: The step size at which the model parameters are updated during training.
+0.001, 0.00001-0.01
+
+Number of epochs: The number of times the training data is passed through the model during training.
+50
+
+Batch size: The number of data samples used in each iteration of the model during training.
+32
+
+Number of hidden layers: The number of layers in the neural network that are between the input and output layers.
+2, 1-4
+
+Number of hidden units: The number of neurons in each hidden layer.
+256, 64-512
+
+Activation function: The function that is applied to the output of each neuron in the hidden layers.
+Starting value: ReLU
+Other options: Sigmoid, Tanh, LeakyReLU, ELU
+
+Dropout rate: The fraction of neurons in the hidden layers that are randomly dropped out during training to prevent overfitting.
+Starting value: 0.2
+Range: 0.1 to 0.5
+
+Regularization strength: The strength of the regularization applied to the model to prevent overfitting.
+Starting value: 1e-5 (0.00001)
+Range: 1e-8 to 1e-3 (0.00000001 to 0.001)
+
+Optimizer: The algorithm used to update the model parameters during training, such as stochastic gradient descent, Adam, or RMSprop.
+Other options: SGD, RMSprop, Adagrad
+
+Learning rate schedule: The function that is used to adjust the learning rate over the course of training, such as a step function or an exponential decay.
+Starting value: Step decay
+Other options: Exponential decay, Cosine annealing, reducelronplateau
+
+Weight initialization method: The method used to initialize the weights of the neural network, such as random initialization, Xavier initialization, or He initialization.
+Starting value: He initialization
+Other options: Xavier initialization, Uniform initialization
+
+Momentum: The factor that determines how much of the previous update to the model parameters is used in the current update.
+Starting value: 0.9
+Range: 0.8 to 0.99
+
+Batch normalization: Whether to apply batch normalization to the hidden layers of the neural network to improve training stability and convergence.
+True

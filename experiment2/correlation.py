@@ -40,32 +40,42 @@ def corr_for_one_video(idx = 0, only_similar = False):
     plt.tick_params(axis='y', rotation=45)
     fig.savefig("results/correlation_matrix_idx{}_similar{}".format(str(idx), str(only_similar)), dpi=200, bbox_inches='tight')
 
-def compute_correlation():
+def compute_correlation(test = True):
     path = "../experiment1/resampled_pickles"
     files = os.listdir(path)
     df_list = [pd.read_pickle(path + "/" + filename) for filename in files]
-    # Compute the correlation matrix for each dataframe
-    #corr_list = [df.corr() for df in df_list]
-    #corr_matrix = reduce(lambda x, y: x.add(y, fill_value=0), corr_list) / len(corr_list)
-    #corr_matrix.to_csv("results/corr_matrix_full.csv")
-    concatenated_df = pd.concat(dataframes, axis=0)
-    # compute the correlation between columns
-    correlation_df = concatenated_df.corr()
-
-    # remove any rows that contain missing data
-    correlation_df = correlation_df.dropna()
+    all_features = set().union(*[set(df.columns) for df in df_list])
+    # Add missing columns
+    for idx, df in enumerate(df_list):
+        missing_features = all_features - set(df.columns)
+        for feature in missing_features:
+            df_list[idx][feature] = pd.Series(dtype='float64')
+            df_list[idx] = df_list[idx].copy()
+        print(df['/driver/blink/data'].isnull().sum())
+        return
+    # Sort by column name
+    df_list_sorted = [df.sort_index(axis = 1) for df in df_list]
+    # Get correlation matrices
+    corr_m_list = [df.corr() for df in df_list_sorted]
+    feature_counts = reduce(lambda x, y: x.add(y.notna().astype(int), fill_value=0), df_list_sorted)
+    # Compute the sum of correlations for each feature across all dataframes
+    corr_sum = reduce(lambda x, y: x.add(y, fill_value=0), corr_m_list)
+    # Divide each correlation by the number of occurrences of the corresponding feature
+    corr_matrix = corr_sum.div(feature_counts, fill_value=0)
+    corr_matrix.to_csv("results/corr_matrix_full.csv")
     # Create a list of tuples, where each tuple contains the name of two features and their correlation coefficient
     corr_list = []
     for i in range(len(corr_matrix.columns)):
         for j in range(i):
-            feature1 = corr_matrix.columns[i]
-            feature2 = corr_matrix.columns[j]
-            corr_coef = corr_matrix.iloc[i, j]
-            if math.isnan(corr_coef):
-                corr_coef = 0
-            corr_list.append((feature1, feature2, corr_coef))
+            if i != j: 
+                feature1 = corr_matrix.columns[i]
+                feature2 = corr_matrix.columns[j]
+                corr_coef = corr_matrix.iloc[i, j]
+                if math.isnan(corr_coef):
+                    corr_coef = 0
+                corr_list.append((feature1, feature2, corr_coef))
     corr_list_sorted = sorted(corr_list, key=lambda x: abs(x[2]), reverse=False)
-    with open('results/correlation_matrix2.csv', 'w', newline='') as file:
+    with open('results/correlation_list.csv', 'w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(['Feature 1', 'Feature 2', 'Correlation Coefficient'])
         for idx, row in enumerate(corr_list_sorted):
@@ -74,4 +84,4 @@ def compute_correlation():
 if __name__ == "__main__":
     #check_for_similar_feature_names()
     #corr_for_one_video(idx = 100, only_similar = False)
-    compute_correlation()
+    compute_correlation(test = False)

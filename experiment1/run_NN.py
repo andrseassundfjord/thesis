@@ -1,13 +1,69 @@
-first_19 = ['/driver/blink', '/driver/eye_open', '/driver/eye_opening_rate',
-       '/driver/face_pitch', '/driver/face_roll', '/driver/face_yaw',
-       '/driver/gaze_horizontal', '/driver/gaze_vertical',
-       '/gps_m2/distance/from_last_intersection',
-       '/gps_m2/distance/to_next_intersection', '/gps_m2/link_id',
-       '/gps_m2/road/curvature', '/gps_m2/road/intersection',
-       '/gps_m2/road/lanes', '/gps_m2/road/traffic_light', '/gps_m2/road/type',
-       '/gps_m2/road/width', '/gps_m2/vehicle/acceleration',
-       '/gps_m2/vehicle/back_state', '/gps_m2/vehicle/direction',
-       '/gps_m2/vehicle/gnss', '/gps_m2/vehicle/gnss_reliability',
-       '/gps_m2/vehicle/movement', '/gps_m2/vehicle/pitch_angle',
-       '/gps_m2/vehicle/speed', '/gps_m2/vehicle/turn_state',
-       '/gps_m2/vehicle/yaw_rate']
+import os
+import pandas as pd
+import numpy as np
+from NN_model import NN
+
+def get_dataset(path, files):
+       all_x = []
+       y = []
+       for filename in files:
+              df = pd.read_pickle(path + "/" + filename)
+              all_x.append(df) 
+              label = filename.split(".")[0].split("_")[-1]
+              y.append(label)
+       return all_x, np.array(y)
+
+def run(test = True):
+       path_to_data = "resampled_pickles"
+       files = os.listdir(path_to_data)
+       feature_stats = pd.read_csv("results/feature_statistics.csv")
+       features = feature_stats.columns[1:]
+       nn_results_er = pd.DataFrame(index = features)
+       nn_results_acc = pd.DataFrame(index = features)
+       nn_results_fp = pd.DataFrame(index = features)
+       x, y = get_dataset(path_to_data, files)
+       for i in range(1, 17):
+              nn_results_er[str(i)] = np.zeros(len(features))
+              nn_results_acc[str(i)] = np.zeros(len(features))
+              nn_results_fp[str(i)] = np.zeros(len(features))
+       print("Started")
+       for idx, feature in enumerate(features):
+              if feature == "Unnamed: 0" or "mobileye" in feature:
+                     nn_result_er.drop(feature)
+                     nn_result_acc.drop(feature)
+                     nn_result_fp.drop(feature)
+                     continue
+              print("Feature: ", feature)
+              nn = NN(x, y, feature, idx)
+              error_rate_arr, accuracy_arr, fp_arr = nn.get_error_rate()
+              for i in range(1, 17):
+                     nn_results_er[str(i)][feature] = error_rate_arr[i-1]
+                     nn_results_acc[str(i)][feature] = accuracy_arr[i-1]
+              if test:
+                     nn_results_er.to_csv("results/nn_test_er.csv")
+                     nn_results_acc.to_csv("results/nn_test_acc.csv")
+                     nn_results_acc.to_csv("results/nn_test_fp.csv")
+                     return
+       nn_results_er.to_csv("results/nn_result_er.csv")
+       nn_results_acc.to_csv("results/nn_result_acc.csv")
+       nn_results_fp.to_csv("results/nn_result_fp.csv")
+       print("Saved files")
+       plot_results()
+       print("Plotted results")
+
+def plot_results():
+       # Plot error rate
+       er = pd.read_csv("results/nn_result_er.csv")
+       er_fig = sns.heatmap(er).figure
+       er_fig.savefig("results/error_rate_nn")
+       # Plot accuracy
+       acc = pd.read_csv("results/nn_result_acc.csv")
+       acc_fig = sns.heatmap(er).figure
+       acc_fig.savefig("results/accuracy_nn")
+       # Plot false positives
+       fp = pd.read_csv("results/nn_result_fp.csv")
+       acc_fig = sns.heatmap(er).figure
+       acc_fig.savefig("results/false_positives_nn")
+    
+if __name__ == "__main__":
+       run(test = False)
