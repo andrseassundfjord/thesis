@@ -127,7 +127,7 @@ class VideoDecoder(nn.Module):
 # Based on https://github.com/cerlymarco/MEDIUM_NoteBook/blob/master/VAE_TimeSeries/VAE_TimeSeries.ipynb
 
 class TimeseriesEncoder(nn.Module):
-    def __init__(self, input_dim, hidden_dim, latent_dim, num_layers=1, categorical_cols=None, embedding_dim = 16):
+    def __init__(self, input_dim, hidden_dim, latent_dim, dropout, num_layers=1, categorical_cols=None, embedding_dim = 16):
         super(TimeseriesEncoder, self).__init__()
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
@@ -135,19 +135,26 @@ class TimeseriesEncoder(nn.Module):
         self.num_layers = num_layers
         self.categorical_cols = categorical_cols
         
+        if categorical_cols is not None:
+            self.embeddings = nn.ModuleList([nn.Embedding(num_embeddings=num_cardinals, embedding_dim=embedding_dim)
+                                             for num_cardinals in categorical_cols])
+            self.input_dim += embedding_dim * len(self.categorical_cols)
+
         self.lstm = nn.LSTM(input_dim, hidden_dim, num_layers=num_layers)
         self.fc1 = nn.Linear(hidden_dim, 32)
         self.fc_mean = nn.Linear(32, latent_dim)
         self.fc_logvar = nn.Linear(32, latent_dim)
         
-        if categorical_cols is not None:
-            self.embeddings = nn.ModuleList([nn.Embedding(num_embeddings=num_cardinals, embedding_dim=embedding_dim)
-                                             for num_cardinals in categorical_cols])
             
         #self.bn = nn.BatchNorm1d(hidden_dim)
-        #self.dropout = nn.Dropout(p=dropout)
+        #self.dropout = nn.Dropout(dropout)
 
-    def forward(self, x):
+    def forward(self, x, cat_inp1, cat_inp2):
+        """
+        x: continuous features
+        cat_inp1: categorical variables with 1 and 0 as possible values
+        cat_inp2: categorical variables with more than two possible values
+        """
         batch_size = x.size(0)
         h0 = torch.zeros(self.num_layers, batch_size, self.hidden_dim).to(x.device)
         c0 = torch.zeros(self.num_layers, batch_size, self.hidden_dim).to(x.device)
@@ -155,10 +162,10 @@ class TimeseriesEncoder(nn.Module):
         if self.categorical_cols is not None:
             cat_inputs = []
             for i, num_cardinals in enumerate(self.categorical_cols):
-                cat_input = x[:, :, i].long()
+                cat_input = cat_inp2[:, :, i].long()
                 cat_inputs.append(self.embeddings[i](cat_input))
             cat_inputs = torch.cat(cat_inputs, dim=-1)
-            x = torch.cat([x[:, :, :len(self.categorical_cols)], cat_inputs, x[:, :, len(self.categorical_cols):]], dim=-1)
+            x = torch.cat([x, cat_inp1, cat_inputs], dim=-1)
 
         lstm_out, _ = self.lstm(x.transpose(0, 1), (h0, c0))
         #lstm_out = self.dropout(self.bn(lstm_out.transpose(1, 2)).transpose(1, 2))
@@ -186,7 +193,7 @@ class TimeseriesDecoder(nn.Module):
         
         if self.categorical_cols is not None:
             self.embeddings = nn.ModuleList([nn.Embedding(num_cardinals, self.embedding_dim) for num_cardinals in self.categorical_cols])
-            self.input_dim = self.latent_dim + self.embedding_dim
+            self.input_dim = self.latent_dim + self.embedding_dim * len(self.categorical_cols)
         else:
             self.input_dim = self.latent_dim
         

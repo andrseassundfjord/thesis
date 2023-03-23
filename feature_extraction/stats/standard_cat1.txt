@@ -1,0 +1,6 @@
+/gps_m2/road/intersection/data
+/gps_m2/road/traffic_light/data
+/mobileye/14
+/vehicle/analog/back_signal/data
+/vehicle/analog/brake_signal/data
+/vehicle/extracted_can/seat_belt_state/data

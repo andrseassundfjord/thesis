@@ -254,7 +254,7 @@ if __name__ == "__main__":
         latent_dim = 512,
         optimizer_arg = optim.Adam,
         model_arg = VideoVAE,
-        video_hidden_shape = [64, 64, 128, 256],
+        video_hidden_shape = [32, 64, 128, 256],
         timeseries_hidden_dim = 16,
         timeseries_num_layers = 1,
         dropout = 0.2

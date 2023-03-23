@@ -29,10 +29,10 @@ class TimeseriesVAE(nn.Module):
             embedding_dim = embedding_dim
         )
 
-    def forward(self, timeseries):
+    def forward(self, x, cat_inp1, cat_inp2):
         # Encode timeseries
-        encoded_timeseries = self.timeseries_encoder(timeseries)
+        encoded_timeseries = self.timeseries_encoder( x, cat_inp1, cat_inp2)
         kl_divergence = -0.5 * torch.sum(1 + encoded_timeseries[2] - encoded_timeseries[1].pow(2) - encoded_timeseries[2].exp(), dim=1).mean()
-        decoded_timeseries = self.timeseries_decoder(encoded_timeseries[0])
+        decoded_timeseries = self.timeseries_decoder(encoded_timeseries[0], cat_inp2)
         return decoded_timeseries, kl_divergence
 
