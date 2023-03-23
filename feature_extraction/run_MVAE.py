@@ -69,8 +69,8 @@ def run(
     optimizer = optimizer_arg(model.parameters(), lr=lr)
 
     # LR scheduler
-    scheduler = ReduceLROnPlateau(optimizer, factor=0.1, patience=5) # Recude lr by factor after patience epochs
-    #scheduler = CosineAnnealingLR(optimizer, T_max=num_epochs)
+    #scheduler = ReduceLROnPlateau(optimizer, factor=0.1, patience=5) # Recude lr by factor after patience epochs
+    scheduler = CosineAnnealingLR(optimizer, T_max=num_epochs)
     #scheduler = StepLR(optimizer, step_size=int(num_epochs/4), gamma=0.1)
 
 
@@ -90,7 +90,7 @@ def run(
                 # Move data to device
                 video = video.to(device)
                 # Forward pass
-                recon_video, kl_divergence = model(video)
+                recon_video, kl_divergence, _ = model(video)
                 loss = reconstruction_loss(recon_video, video)
                 loss += kl_divergence
             elif False:
@@ -133,13 +133,14 @@ def run(
                     # Move data to device
                     video = video.to(device)
                     # Forward pass
-                    recon_video, kl_divergence = model(video)
+                    recon_video, kl_divergence, _ = model(video)
                     loss = reconstruction_loss(recon_video, video)
                     loss += kl_divergence
                 elif False:
                     # Move data to device
-                    video = video.to(device)
                     timeseries = timeseries.to(device)
+                    timeseries = F.normalize(timeseries, p=1, dim=1)
+
                     nan_mask = torch.isnan(timeseries)
                     # Replace NaN values with 0 using boolean masking
                     timeseries[nan_mask] = 0.0
@@ -160,8 +161,8 @@ def run(
                     loss += kl_divergence
                 test_loss += loss.item()
         # lr schedule step
-        scheduler.step(test_loss) # For plateau
-        #scheduler.step() # for other
+        #scheduler.step(test_loss) # For plateau
+        scheduler.step() # for other
         test_loss /= len(video_test_loader.dataset)
         test_losses.append(test_loss)
         # Print loss
@@ -176,15 +177,13 @@ def run(
 
     plot_loss(train_losses, test_losses, "results/loss_plots/{}".format(savename), num_epochs)
     num_params = sum(p.numel() for p in model.parameters())
-    print(type(scheduler).__name__)
-    print(type(model).__name__)
-    print(type(optimizer).__name__)
 
-    hyperparameters = [savename, model_arg, end_time - start_time, train_losses[-1], test_losses[-1], num_params, lr, num_epochs, batch_size, 
+    hyperparameters = [savename, type(model).__name__, end_time - start_time, train_losses[-1], test_losses[-1], num_params, lr, num_epochs, batch_size, 
                         latent_dim, input_dims[0], input_dims[1], video_hidden_shape, timeseries_num_layers, timeseries_hidden_dim,
-                        "LeakyReLU", dropout, "dropout, kl div", optimizer_arg, "ReduceLROnPlateau", "kaiminghe_uniform", "None", "Yes", ""]
+                        "LeakyReLU", dropout, "dropout, kl div", type(optimizer).__name__, type(scheduler).__name__, "kaiminghe_uniform", "None", "Yes", ""]
 
     write_hyperparameters_to_file(hyperparameters, "results/hyperparameters.csv")
+    torch.save(model.state_dict(), 'models/videoVAE_state.pth')
 
 def write_hyperparameters_to_file(hyperparameters, file_path):
     """
@@ -245,26 +244,18 @@ def plot_num_frames(num_frames):
     plt.savefig("results/frame_stats_log")
 
 if __name__ == "__main__":
-    rewrite = False
-    if rewrite:
-        hyperparameters = ["Savename", "Model", "train time (s)", "train loss", "test loss", "n model params", "lr", "num epochs", "batch size", "latent dim", "video shape", "timeseries shape", "video hidden shape", "timeseries num hidden layers", "timeseries hidden dim", "activation function",
-        "dropout prob", "reg strength", "optimizer", "lr schedule", "weight init", "momentum", "batch norm", "notes"]
-        # Write the header row to the file
-        with open("results/hyperparameters.csv", 'w', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow(hyperparameters)
     run(
-        "video_lr_schedule_inc_latent_dim",
+        "video_inc_batch_latent4",
         load = True,
         train_ratio = 0.7,
-        batch_size = 32,
-        lr = 0.0001,
-        num_epochs = 50,
-        latent_dim = 64,
+        batch_size = 512,
+        lr = 0.00001,
+        num_epochs = 150,
+        latent_dim = 512,
         optimizer_arg = optim.Adam,
         model_arg = VideoVAE,
-        video_hidden_shape = [32, 64, 128, 256],
+        video_hidden_shape = [64, 64, 128, 256],
         timeseries_hidden_dim = 16,
         timeseries_num_layers = 1,
-        dropout = 0.1
+        dropout = 0.2
     )

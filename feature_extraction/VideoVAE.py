@@ -29,5 +29,5 @@ class VideoVAE(nn.Module):
         kl_divergence = -0.5 * torch.sum(1 + encoded_video[2] - encoded_video[1].pow(2) - encoded_video[2].exp(), dim=1).mean()
         # Decode
         decoded_video = self.video_decoder(encoded_video[0])
-        return decoded_video, kl_divergence
+        return decoded_video, kl_divergence, encoded_video
 

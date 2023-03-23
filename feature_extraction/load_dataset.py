@@ -13,41 +13,6 @@ import random
 import pandas as pd
 import math
 
-import ffmpeg
-
-class VideoDataset_ffmpeg(Dataset):
-    def __init__(self, file_paths):
-        self.file_paths = file_paths
-
-        # Set output video resolution to 480p
-        self.resolution = '854x480'
-
-        # Set output video bit rate to 500 kbps
-        self.bitrate = '500k'
-
-    def __getitem__(self, idx):
-        # Get the file path of the video
-        path = self.file_paths[idx]
-
-        # Create a video stream and set the resolution and bit rate
-        stream = ffmpeg.input(path).video.filter('scale', self.resolution).filter('bitrate', self.bitrate)
-
-        # Create an output stream with H.264 video codec and AAC audio codec
-        output = ffmpeg.output(stream, 'pipe:', format='rawvideo', pix_fmt='rgb24')
-
-        # Run the ffmpeg command and read the output as a numpy array
-        out, _ = ffmpeg.run(output, capture_stdout=True)
-        video = np.frombuffer(out, np.uint8).reshape([-1, 480, 854, 3])
-
-        # Normalize pixel values to [0, 1]
-        video = video.astype(np.float32) / 255.0
-
-        # Return the processed video
-        return video
-
-    def __len__(self):
-        return len(self.file_paths)
-
 class VideoDataset(Dataset):
     def __init__(self, file_paths, frame_len = 64, size = 128):
         self.file_paths = file_paths

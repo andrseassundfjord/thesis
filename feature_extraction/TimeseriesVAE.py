@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from components import TimeseriesEncoder, TimeseriesDecoder
 
 class TimeseriesVAE(nn.Module):
-    def __init__(self, input_dims, latent_dim, hidden_layers, dropout):
+    def __init__(self, input_dims, latent_dim, hidden_layers, dropout, embedding_dim = 16, cat_cols = None):
         super(TimeseriesVAE, self).__init__()
 
         self.timeseries_input_shape = input_dims[1]
@@ -15,14 +15,18 @@ class TimeseriesVAE(nn.Module):
             input_dim = self.timeseries_input_shape[1], 
             hidden_dim = self.hidden_dim,
             latent_dim = latent_dim,
-            num_layers = self.num_hidden_layers
+            num_layers = self.num_hidden_layers,
+            categorical_cols = cat_cols,
+            embedding_dim = embedding_dim
         )
         # Decoder
         self.timeseries_decoder = TimeseriesDecoder(
             latent_dim = latent_dim, 
             hidden_dim = self.hidden_dim, 
             output_shape = self.timeseries_input_shape,
-            num_layers = self.num_hidden_layers
+            num_layers = self.num_hidden_layers,
+            categorical_cols = cat_cols,
+            embedding_dim = embedding_dim
         )
 
     def forward(self, timeseries):

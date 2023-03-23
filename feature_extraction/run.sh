@@ -7,4 +7,5 @@ set -e
 source ../env/bin/activate
 
 #python test.py
-python run_MVAE.py
+#python run_MVAE.py
+python save_video.py

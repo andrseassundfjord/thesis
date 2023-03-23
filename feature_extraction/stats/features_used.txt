@@ -1,0 +1,152 @@
+List of used features:
+Continous:
+/driver/eye_opening_rate/data
+/driver/face_pitch/data
+/driver/face_yaw/data
+/driver/gaze_horizontal/data
+/driver/gaze_vertical/data
+/driver/heart_rate/data
+
+/gps_m2/distance/from_last_intersection/range
+/gps_m2/distance/to_next_intersection/range
+/gps_m2/road/curvature/data 
+/gps_m2/vehicle/movement/data
+/gps_m2/vehicle/pitch_angle/data
+/gps_m2/vehicle/yaw_rate/data
+
+/mobileye/4
+/mobileye/5
+/mobileye/6
+/mobileye/7
+/mobileye/8
+/mobileye/9
+/mobileye/10 (actually categorical, but categories represent equal ranges)
+/mobileye/16
+/mobileye/17
+/mobileye/18
+
+/mobileye/1045 + 7k
+/mobileye/1046 + 7k
+/mobileye/1047 + 7k
+/mobileye/1048 + 7k
+
+/vehicle/acceleration/accel/linear/y
+/vehicle/acceleration/accel/linear/x
+/vehicle/acceleration/accel/linear/z
+/vehicle/analog/speed_pulse/data
+/vehicle/extracted_can/brake_pedal_hydraulic/data
+/vehicle/extracted_can/gas_pedal_position/data
+/vehicle/extracted_can/speed/data
+/vehicle/extracted_can/steering_angle/data
+
+/mobileye/21 + 16i
+/mobileye/22 + 16i
+/mobileye/25 + 16i
+/mobileye/29 + 16i
+/mobileye/30 + 16i
+/mobileye/31 + 16i
+/mobileye/33 + 16i
+/mobileye/34 + 16i
+/mobileye/35 + 16i
+
+Categorical:
+/gps_m2/road/intersection/data
+/gps_m2/road/traffic_light/data
+
+/mobileye/14
+
+/vehicle/analog/back_signal/data
+/vehicle/analog/brake_signal/data
+/vehicle/extracted_can/seat_belt_state/data
+
+/mobileye/28 + 16i
+
+
+Categorical with more than 2 classes:
+/gps_m2/road/lanes/data - 11 classes
+/gps_m2/road/type/data - 63
+/gps_m2/road/width/data - 10 classes
+/gps_m2/vehicle/turn_state/data - 3 classes
+/mobileye/2 - 7 classes
+/mobileye/3 - 7 classes
+/mobileye/11 - 3 classes
+/mobileye/15 - 3 classes
+/mobileye/19 - 6 classes
+/mobileye/1044 + 7k - 3 classes
+/mobileye/1049 + 7k - 5 classes
+/vehicle/analog/turn_signal/data - 4 classes
+/vehicle/extracted_can/headlight_state/data - 4 classes
+/mobileye/23 + 16i - 5 classes
+/mobileye/24 + 16i - 5 classes
+/mobileye/26 + 16i - 6 classes
+/mobileye/27 + 16i - 6 classes
+/mobileye/32 + 16i - 4 classes
+
+
+List of all features (except mobileye/20+):
+'/driver/blink/data', '/driver/eye_open/data', '/driver/eye_opening_rate/data', '/driver/face_pitch/data', '/driver/face_roll/data', '/driver/face_yaw/data', '/driver/gaze_horizontal/data', '/driver/gaze_vertical/data'
+'/gps_m2/distance/from_last_intersection/field_of_view', '/gps_m2/distance/from_last_intersection/max_range', '/gps_m2/distance/from_last_intersection/min_range', '/gps_m2/distance/from_last_intersection/radiation_type', '/gps_m2/distance/from_last_intersection/range', '/gps_m2/distance/to_next_intersection/field_of_view', '/gps_m2/distance/to_next_intersection/max_range', '/gps_m2/distance/to_next_intersection/min_range', '/gps_m2/distance/to_next_intersection/radiation_type', '/gps_m2/distance/to_next_intersection/range', 
+'/gps_m2/link_id/data', 
+'/gps_m2/road/curvature/data', '/gps_m2/road/intersection/data', '/gps_m2/road/lanes/data', '/gps_m2/road/traffic_light/data', '/gps_m2/road/type/data', '/gps_m2/road/width/data', 
+'/gps_m2/vehicle/acceleration/accel/linear/y', '/gps_m2/vehicle/acceleration/accel/linear/x', '/gps_m2/vehicle/acceleration/accel/linear/z', '/gps_m2/vehicle/acceleration/accel/angular/y', '/gps_m2/vehicle/acceleration/accel/angular/x', '/gps_m2/vehicle/acceleration/accel/angular/z', '/gps_m2/vehicle/back_state/data', '/gps_m2/vehicle/direction/data', '/gps_m2/vehicle/gnss/altitude', '/gps_m2/vehicle/gnss/latitude', '/gps_m2/vehicle/gnss/longitude', '/gps_m2/vehicle/gnss/position_covariance_type', '/gps_m2/vehicle/gnss_reliability/data', '/gps_m2/vehicle/movement/data', '/gps_m2/vehicle/pitch_angle/data', '/gps_m2/vehicle/speed/data', '/gps_m2/vehicle/turn_state/data', '/gps_m2/vehicle/yaw_rate/data', 
+'/mobileye/01/data', '/mobileye/02/data', '/mobileye/03/data', '/mobileye/04/data', '/mobileye/05/data', '/mobileye/06/data', '/mobileye/07/data', '/mobileye/08/data', '/mobileye/09/data', '/mobileye/10/data', '/mobileye/11/data', '/mobileye/12/data', '/mobileye/13/data', '/mobileye/14/data', '/mobileye/15/data', '/mobileye/16/data', '/mobileye/17/data', '/mobileye/18/data', '/mobileye/19/data', 
+'/vehicle/acceleration/accel/linear/y', '/vehicle/acceleration/accel/linear/x', '/vehicle/acceleration/accel/linear/z', '/vehicle/acceleration/accel/angular/y', '/vehicle/acceleration/accel/angular/x', '/vehicle/acceleration/accel/angular/z', 
+'/vehicle/analog/back_signal/data', '/vehicle/analog/brake_signal/data', '/vehicle/analog/speed_pulse/data', '/vehicle/analog/turn_signal/data', 
+'/vehicle/extracted_can/brake_pedal_hydraulic/data', '/vehicle/extracted_can/gas_pedal_position/data', '/vehicle/extracted_can/headlight_state/data', '/vehicle/extracted_can/seat_belt_state/data', '/vehicle/extracted_can/speed/data', '/vehicle/extracted_can/steering_angle/data', 
+'/vehicle/gnss/altitude', '/vehicle/gnss/latitude', '/vehicle/gnss/longitude', '/vehicle/gnss/position_covariance_type', '/driver/heart_rate/data'
+
+83 in total
+
+List of possible useless features:
+mobileye/1 - time?
+mobileye/2 - lane marker left
+mobileye/3 - lane marker right
+all vehicle/gnss features
+probably gps_m2/road/lanes
+can choose between /gps_m2/vehicle and /vehicle/
+
+List of features with min-max = 0:
+/gps_m2/vehicle/acceleration/accel/angular/z	
+/gps_m2/vehicle/acceleration/accel/angular/x
+/gps_m2/vehicle/acceleration/accel/angular/y
+/gps_m2/vehicle/acceleration/accel/linear/z	
+/gps_m2/vehicle/gnss/altitude
+/gps_m2/vehicle/gnss/position_covariance_type
+/gps_m2/distance/from_last_intersection/field_of_view
+/gps_m2/distance/from_last_intersection/max_range
+/gps_m2/distance/from_last_intersection/min_range
+/gps_m2/distance/from_last_intersection/radiation_type	
+/gps_m2/distance/to_next_intersection/field_of_view	
+/gps_m2/distance/to_next_intersection/max_range	
+/gps_m2/distance/to_next_intersection/min_range
+/gps_m2/distance/to_next_intersection/radiation_type
+/mobileye/13/data
+/vehicle/acceleration/accel/angular/y	
+/vehicle/acceleration/accel/angular/x	
+/vehicle/acceleration/accel/angular/z
+/vehicle/gnss/altitude
+/vehicle/gnss/position_covariance_type	
+
+Overlap of gps_m2 and vehicle:
+[['vehicle', 'acceleration', 'accel', 'linear', 'y'], 
+['vehicle', 'acceleration', 'accel', 'linear', 'x'], 
+['vehicle', 'acceleration', 'accel', 'linear', 'z'], 
+['vehicle', 'acceleration', 'accel', 'angular', 'y'], 
+['vehicle', 'acceleration', 'accel', 'angular', 'x'], 
+['vehicle', 'acceleration', 'accel', 'angular', 'z'], 
+['vehicle', 'gnss', 'altitude'], 
+['vehicle', 'gnss', 'latitude'], 
+['vehicle', 'gnss', 'longitude'], 
+['vehicle', 'gnss', 'position_covariance_type']]
+
+List of categorical features that might not be useless:
+mobileye/10 - curvature detection, categorical variable
+mobileye/11 - lane change info, categorical, 0 unknown 1 right side change 2 right side change
+mobileye/15 - status of vehicle ahead: 0: unknown 1: Approaching from left 2: Approaching from right
+mobileye/19 - number of pedestrians
+0: unknown
+1: single pedestrian
+2: multiple pedestrians
+3: single bicycle
+4: multiple bicycles
+5: multiple pedestrians and bicycles
