@@ -60,6 +60,7 @@ def save_video():
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out = cv2.VideoWriter('results/videos/{}_original.mp4'.format(filename), fourcc, 30, (video_shape[4], video_shape[3]), isColor=True)
     video = video.squeeze(0)
+    video = video * 255.0
     video = video.permute(1, 2, 3, 0).detach().cpu().numpy()
     for i in range(video_shape[2]):
         frame = video[i, :, :, :]
@@ -71,6 +72,7 @@ def save_video():
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out = cv2.VideoWriter('results/videos/{}_reconstructed.mp4'.format(filename), fourcc, 30, (video_shape[4], video_shape[3]), isColor=True)
     decoded = decoded.squeeze(0)
+    decoded = decoded * 255.0
     decoded = decoded.permute(1, 2, 3, 0).detach().cpu().numpy()
     for i in range(video_shape[2]):
         frame = decoded[i, :, :, :]

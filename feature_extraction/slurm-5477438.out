@@ -1,6 +1,0 @@
-Traceback (most recent call last):
-  File "save_video.py", line 85, in <module>
-    save_video()
-  File "save_video.py", line 76, in save_video
-    frame = decoded[i, :, :, :].cpu().numpy()
-RuntimeError: Can't call numpy() on Tensor that requires grad. Use tensor.detach().numpy() instead.
