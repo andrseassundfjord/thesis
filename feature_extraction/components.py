@@ -149,7 +149,7 @@ class TimeseriesEncoder(nn.Module):
         #self.bn = nn.BatchNorm1d(hidden_dim)
         #self.dropout = nn.Dropout(dropout)
 
-    def forward(self, x, cat_inp1, cat_inp2):
+    def forward(self, x, cat_inp1 = None, cat_inp2 = None):
         """
         x: continuous features
         cat_inp1: categorical variables with 1 and 0 as possible values
@@ -182,7 +182,7 @@ class TimeseriesEncoder(nn.Module):
 
 
 class TimeseriesDecoder(nn.Module):
-    def __init__(self, latent_dim, hidden_dim, output_shape, num_layers=1, categorical_cols=None, embedding_dim=16):
+    def __init__(self, latent_dim, hidden_dim, output_shape, dropout = 0.1, num_layers=1, categorical_cols=None, embedding_dim=16):
         super(TimeseriesDecoder, self).__init__()
         self.latent_dim = latent_dim
         self.hidden_dim = hidden_dim

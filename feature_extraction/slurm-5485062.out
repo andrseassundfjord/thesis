@@ -1,0 +1,15 @@
+Using device: cuda
+Traceback (most recent call last):
+  File "run_MVAE.py", line 247, in <module>
+    run(
+  File "run_MVAE.py", line 41, in run
+    video_train_loader, video_test_loader, timeseries_train_loader, timeseries_test_loader = get_dataloaders(
+  File "/work6/a_sundfjord/thesis/feature_extraction/load_dataset.py", line 242, in get_dataloaders
+    video_train_dataloader = torch.load('dataloaders/video_train_dataloader.pth')
+  File "/work6/a_sundfjord/thesis/env/lib/python3.8/site-packages/torch/serialization.py", line 789, in load
+    return _load(opened_zipfile, map_location, pickle_module, **pickle_load_args)
+  File "/work6/a_sundfjord/thesis/env/lib/python3.8/site-packages/torch/serialization.py", line 1131, in _load
+    result = unpickler.load()
+  File "/work6/a_sundfjord/thesis/env/lib/python3.8/site-packages/torch/serialization.py", line 1124, in find_class
+    return super().find_class(mod_name, name)
+AttributeError: Can't get attribute 'VideoDataset' on <module '__main__' from 'run_MVAE.py'>

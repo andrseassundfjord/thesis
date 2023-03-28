@@ -12,6 +12,7 @@ from torchvision import transforms
 import random
 import pandas as pd
 import math
+import time
 
 class VideoDataset(Dataset):
     def __init__(self, file_paths, frame_len = 64, size = 128):
@@ -75,47 +76,49 @@ class DataFrameTimeseriesDataset(Dataset):
         """
         # read in the text files and store the column names in a list
         file_list = ["stats/standard_cont.txt","stats/standard_cat1.txt", "stats/standard_cat2.txt",
-                     "stats/mobileye_pedestrians_cont.txt", "stats/mobileye_pedestrians_cat1.txt", "stats/mobileye_pedestrians_cat2.txt"
+                     "stats/mobileye_pedestrian_cont.txt", "stats/mobileye_pedestrian_cat2.txt",
                      "stats/mobileye_cars_cont.txt", "stats/mobileye_cars_cat1.txt", "stats/mobileye_cars_cat2.txt"]
         col_lists = []
         for file_name in file_list:
             with open(file_name, 'r') as f:
                 col_lists.append([line.strip() for line in f])
-
         # Expand Mobileye lists so that it contains all possible mobileye features
         n = 64  # number of times to multiply the list
-        for i, c_list in enumerate(col_lists):
+        for i, c_list in enumerate(col_lists[3:]):
+            num = 16 if (i+3) > 4 else 7
             new_list = []
-            for i in range(n):
+            for j in range(n):
                 for col in c_list:
-                    number = int(col.split('/')[-1]) + (16 * i)
-                    new_list.append(f"/mobileye/{number}")
-            col_lists[i] = new_list
-            
+                    number = int(col.split('/')[-1]) + (num * j)
+                    new_list.append(f"/mobileye/{number}/data")
+            col_lists[i+3] = new_list
         split_list = []
         
         for df in self.dataframes:
             df_dict = {}
-
             # iterate over the list of column name lists and create a dataframe for each
             for i, cols in enumerate(col_lists):
                 df_name = file_list[i].split("/")[-1].split(".")[0]
-                if all(col in df.columns for col in cols):
-                    split_df = df[cols].copy().values.astype(np.float32)
-                else:
-                    # if any columns are missing, add them as empty columns
-                    if "cont" in df_name:
-                        missing_cols = set(cols) - set(df.columns)
-                        for col in missing_cols:
-                            df[col] = np.nan
-                        split_df = df[cols].copy().astype(np.float32)
-                    else:
-                        valid_cols = [col for col in cols if col in df.columns]
-                        split_df = df[valid_cols].copy().astype(np.float32)
+                valid_cols = [col for col in cols if col in df.columns]
+                split_df = df[valid_cols].copy()
                 # Resample df, and interpolate or ffill based on continous or categorical values
                 interpolate = "cont" in df_name
+                split_df.set_index(df.index, inplace=True)
                 resampled_df = self.resample_dataframe(split_df, interpolate=interpolate)
-                df_dict[df_name] = resampled_df
+                # Add all mandatory features
+                if "standard" in df_name:
+                    # if any columns are missing, add them as empty columns
+                    missing_cols = set(cols) - set(df.columns)
+                    missing_df = pd.DataFrame(columns=list(missing_cols))
+                    resampled_df = pd.concat([resampled_df, missing_df], axis=1) 
+                df_dict[df_name] = resampled_df.values.astype(np.float32)
+            # Check that mobileye features match in dimensions
+            if (df_dict["mobileye_pedestrian_cat2"].shape[1] / 2) != (df_dict["mobileye_pedestrian_cont"].shape[1] / 4):
+                print("uneven number of pedestrian features")
+            if (df_dict["mobileye_cars_cat1"].shape[1]) != (df_dict["mobileye_cars_cat2"].shape[1] / 5):
+                print("uneven number of cars features")
+            if (df_dict["mobileye_cars_cat1"].shape[1]) != (df_dict["mobileye_cars_cont"].shape[1] / 9):
+                print("uneven number of cars features")
             # Add dict to list
             split_list.append(df_dict)
 
@@ -125,6 +128,11 @@ class DataFrameTimeseriesDataset(Dataset):
         # Replace True/False with 1/0
         df = df.replace(True, 1)
         df = df.replace(False, 0)
+        if df.isna().all().all():
+            empty_df = pd.DataFrame(np.empty((self.n_samples, len(df.columns))))
+            empty_df[:] = np.nan
+            empty_df.columns = df.columns
+            return empty_df
         # resample to n_samples samples
         min, max = df.index[0], df.index[-1]
         interval = (max - min) / (self.n_samples - 1)
@@ -134,7 +142,6 @@ class DataFrameTimeseriesDataset(Dataset):
             resampled_df = df.resample(interval).mean(numeric_only = True).ffill().bfill()
         # Some have n_samples + 1 for some reason, remove last if thats the case 
         resampled_df = resampled_df.iloc[:self.n_samples]
-
         return resampled_df
     
     def __len__(self):
@@ -151,14 +158,14 @@ class DataFrameTimeseriesDataset(Dataset):
 
 def load_data(folder_path, video_path):
     class_dict = {}
-    for file_path in glob.glob(os.path.join(folder_path, '*.pkl')):
+    for file_path in glob.glob(os.path.join(folder_path, '*.pkl4')):
         filename = file_path.split("/")[-1].split(".")[0]
         video_name = glob.glob(os.path.join(video_path, filename + '.mp4'))
         if len(video_name) == 1:
             video_name = video_name[0]
             with open(file_path, 'rb') as f:
                 sample = pickle.load(f)
-                sample_df = series_to_dataframe(sample)
+            sample_df = series_to_dataframe(sample)
             label = video_name.split(".")[0].split("_")[-1]
             if label not in class_dict:
                 class_dict[label] = [[], []]
@@ -208,7 +215,6 @@ def split_data(class_dict, train_ratio=0.7, batch_size = 32, save = False):
         # Add labels
         train_labels += [label] * n_train
         test_labels += [label] * (len(samples) - n_train)
-        
     # Define the data loaders
     video_dataset_train = VideoDataset(video_list_train)
     video_dataset_test = VideoDataset(video_list_test)
@@ -242,15 +248,13 @@ def get_dataloaders(pickle_path, video_path, train_ratio = 0.7, batch_size = 32,
     return split_data(class_dict, train_ratio = train_ratio, batch_size = batch_size, save = save)
 
 if __name__ == "__main__":
-    print("Start")
+    start_time = time.time()
+    print("Started", flush = True)
     video_train_loader, video_test_loader, timeseries_train_loader, timeseries_test_loader = get_dataloaders(
                                                         '/work5/share/NEDO/nedo-2019/data/processed_rosbags_topickles/fixed_pickles', 
                                                         "/work5/share/NEDO/nedo-2019/data/01_driving_data/movie", 
-                                                        save = True
+                                                        save = True, batch_size=32
                                                     )
-    print("saved")
-    for i, (video, timeseries) in enumerate(zip(video_train_loader, timeseries_train_loader)):
-        print(timeseries)
-        print(timeseries["mobileye_cars_cont"])
-        print(type(timeseries["mobileye_cars_cont"]))
-        break
+    end_time = time.time() - start_time
+    print("Finished, took {} seconds".format(end_time))
+    
