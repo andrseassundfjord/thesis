@@ -64,7 +64,7 @@ Categorical:
 
 Categorical with more than 2 classes:
 /gps_m2/road/lanes/data - 11 classes
-/gps_m2/road/type/data - 63
+/gps_m2/road/type/data - 64 classes
 /gps_m2/road/width/data - 10 classes
 /gps_m2/vehicle/turn_state/data - 3 classes
 /mobileye/2 - 7 classes

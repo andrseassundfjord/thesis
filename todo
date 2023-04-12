@@ -1,12 +1,14 @@
 - Things to test VideoVAE:
     - resize video to 256x256, compare
-    - reconstruct video to see result
+    - flush prints
+    - add early stopping
+    - to hyperparameters, write best train and test loss together with epoch number
 - Things to test MVAE:
     - bigger batch size
 - Things to test TimeseriesVAE:
     - first baseline, all inputs
     - remove uneccesary featueres, actually run 
-    - mean imputation, conditional imputation, Variational autoencoder imputation
+    - mean imputation, conditional imputation, Variational autoencoder imputation, mode imputation, or regression imputation
     - normalize values
     - tune hyperparameters
     - distribution based imputation vs mean imputation vs 0 vs -1

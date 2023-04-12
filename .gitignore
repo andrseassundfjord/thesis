@@ -133,3 +133,6 @@ dmypy.json
 
 # Dataloaders, models
 *.pth
+
+/interpolated_pickles
+/resampled_pickles

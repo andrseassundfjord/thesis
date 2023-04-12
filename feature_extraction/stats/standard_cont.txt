@@ -16,7 +16,6 @@
 /mobileye/7
 /mobileye/8
 /mobileye/9
-/mobileye/10
 /mobileye/16
 /mobileye/17
 /mobileye/18

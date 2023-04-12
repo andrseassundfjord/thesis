@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import numpy as np
 from NN_model import NN
+import seaborn as sns
 
 def get_dataset(path, files):
        all_x = []
@@ -29,20 +30,24 @@ def run(test = True):
        print("Started")
        for idx, feature in enumerate(features):
               if feature == "Unnamed: 0" or "mobileye" in feature:
-                     nn_result_er.drop(feature)
-                     nn_result_acc.drop(feature)
-                     nn_result_fp.drop(feature)
+                     nn_results_er.drop(feature)
+                     nn_results_acc.drop(feature)
+                     nn_results_fp.drop(feature)
                      continue
-              print("Feature: ", feature)
+              print("Feature: ", feature, flush = True)
               nn = NN(x, y, feature, idx)
               error_rate_arr, accuracy_arr, fp_arr = nn.get_error_rate()
+              print("error rate: ", error_rate_arr, flush=True)
+              print("accuracy: ", accuracy_arr, flush=True)
+              print("false positive: ", fp_arr, flush=True)
               for i in range(1, 17):
                      nn_results_er[str(i)][feature] = error_rate_arr[i-1]
                      nn_results_acc[str(i)][feature] = accuracy_arr[i-1]
+                     nn_results_fp[str(i)][feature] = fp_arr[i-1]
               if test:
                      nn_results_er.to_csv("results/nn_test_er.csv")
                      nn_results_acc.to_csv("results/nn_test_acc.csv")
-                     nn_results_acc.to_csv("results/nn_test_fp.csv")
+                     nn_results_fp.to_csv("results/nn_test_fp.csv")
                      return
        nn_results_er.to_csv("results/nn_result_er.csv")
        nn_results_acc.to_csv("results/nn_result_acc.csv")

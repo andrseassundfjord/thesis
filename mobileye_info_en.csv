@@ -1,0 +1,116 @@
+Index,Name,Attribute,State,Signal,Event,Period (msec),resolution,unit,min,max,Target Lost Value,Error Value,remarks,CANID,[byte][bit],other
+1,Time,,,〇,,-,1,ms,0,20 digits,none,none,Always a number,,,
+2,Lane Marker Type (left),,〇,,,66~100,1,-,0,6,2,6,"0: Dashed line
+1: Solid line
+2: No line
+3: Road Edge
+4: Two lanes
+5: Bott's Dot
+6: Outliers",0x669,[0][7:4],Need to extract data with confidence level?
+3,Lane Marker Type (right),,〇,,,66~100,1,-,0,6,2,6,"0: Dashed line
+1: Solid line
+2: No line
+3: Road Edge
+4: Two lanes
+5: Bott's Dot
+6: Outliers",0x669,[5][7:4],Need to extract data with confidence level?
+4,Lane Marker Distance (left),,,〇,,66~100,0.02,m,-40,40,-655.36,-655.34,,0x669,[1][7:4]+[2][7:0]<<4,Need to extract data with confidence level?
+5,Lane Marker Distance (right),,,〇,,66~100,0.02,m,-40,40,-655.36,-655.34,,0x669,[6][7:4]+[7][7:0]<<4,Need to extract data with confidence level?
+6,Speed Limit,,〇,,,66~100,1,-,0,255,-1,-1,"Speed indicator
+See attached sheet","0x720,0x721,…,0x726
+Processing",,
+7,Pitch Angle,,,〇,,66~100,0.0625,radians,-0.05,0.05,-2048,-2048,,0x737,[4][7:0]+[5][7:0]<<8,
+8,Yaw Angle,,,〇,,66~100,0.0625,radians,-31,31,-2048,-2048,,0x737,[6][7:0]+[7][7:0]<<8,
+9,Road Curvature,,,〇,,66~100,3.81E-10,1/m,-0.12,0.12,-0.12485,-0.12485,,0x737,[0][7:0]+[1][7:0]<<8,
+10,Curvature Detection,,〇,,,66~100,1,-,0,6,0,0,"0: unknown
+1: R < 100
+2: 100 < R < 300
+3: 300 < R < 500
+4: 500 < R < 700
+5: 700 < R < 1000
+6: 1000 < R","Micro Processing
+(0x737)",,6 indicates a straight line?
+11,Lane Change Information,,〇,,,66~100,1,-,0,2,0,0,"0: unknown
+1: right-side lane change
+2: left-side lane change","Micro Processing
+(0x700)",,
+12,Time Headway (THW),,,〇,,66~100,0.1,s,0,9.9,-1,-1,,0x700,[2][7:1],Hedway mesaurement
+13,Traffic Volume,,,〇,,66~100,1,unit (person or car),0,255,0,0,"Total number of vehicles, pedestrians and bicycles",0x738,[0][7:0],It is impossible to separate pedestrians and cars without processing
+14,Direction of vehicle ahead,,〇,,,66~100,1,-,0,1,0,0,"0: Not Approaching
+1: Approaching",0x738,[5][0],
+15,Status of vehicle ahead,,〇,,,66~100,1,-,0,2,0,0,"0: unknown
+1: Approaching from left
+2: Approaching from right","Micro Processing
+(0x738)",[3][2:3],
+16,Distance to car ahead,,,〇,,66~100,0.0625,m,0,250,-1,-1,,"Processing
+Sum of all objects",,"0, if there is no car?"
+17,Velocity of car ahead,,,〇,,66~100,0.0625,m/s,0,198,-1,-1,,"Processing
+Sum of all objects",,"0, if there is no car? Doesn't it have to be relative velocity?"
+18,Time to Collision (TTC),,,〇,,66~100,0.0625,s,0,250,-1,-1,,"Processing
+Sum of all objects",,"0, if there is no car? Can it be calculated by distance/relative velocity?"
+19,Pedestrian/Bicycle Amount,,〇,,,66~100,1,-,0,5,0,0,"0: unknown
+1: single pedestrian
+2: multiple pedestrians
+3: single bicycle
+4: multiple bicycles
+5: multiple pedestrians and bicycles","Processing
+(0x738,0x739,0x73B,0x73ASum of all objects)",,
+20+16i,Object ID,,,,,66~100,1,-,0,255,-1,-1,*Vehicle ID (Max 64),0x739+i*3,[0][7:0],
+21+16i,neighboring object longitudinal position (forward),,,〇,,66~100,0.0625,m,0,250,-1,-1,*Vehicle ID (Max 64),0x739+i*3,[1][7:0]+[2][3:0]<<8,
+22+16i,Neighboring object latitudinal position (horizontal),,,〇,,66~100,0.0625,m,-31.93,31.93,-2048,-2048,"Right Direction: +ve
+Left Direction: -ve
+*Vehicle ID (Max 64)",0x739+i*3,[3][7:0]+[4][1:0]<<8,
+23+16i,Lane information of surrounding vehicles,,,,,66~100,1,-,0,4,0,0,"0:undefined,1:in_host_lane,2:out_host_lane,3:right,4:both",0x739+i*3,[4][7:5],
+24+16i,Blinkers,,,,,66~100,1,-,0,4,0,0,"0:unavailable,1:off,2:left,3:right,4:both",0x739+i*3,[4][4:2],
+25+16i,Relative Speed,,,〇,,66~100,0.0625,m/s,-127.93,127.93,-2048,-2048,*Vehicle ID (Max 64),0x739+i*3,[5][7:0]+[6][3:0]<<8,
+26+16i,Surrounding Vehicle Type,,〇,,,66~100,1,-,0,5,5,5,"0: Ordinary Car
+1: Truck
+2: Motorcycle
+5: Unknown
+*Vehicle ID (Max 64)",0x739+i*3,[6][6:4],"0: Ordinary Car
+1: Truck
+2: Motorcyle
+3: Pedestrian
+4: Bicycle
+5: Unknown"
+27+16i,Object State,,,,,66~100,1,-,0,5,0,0,"0:undefined,1:standing(never moved, back lights are on),2:stopped(movable),3:moving,4:oncoming,5:parked (never moved, back lights are ?)",0x739+i*3,[7][2:0],
+28+16i,neighboring vehicle brake light status,,〇,,,66~100,1,-,0,1,-1,-1,"0:OFF
+1:ON
+*Vehicle ID (Max 64)",0x739+i*3,[7][3],
+29+16i,Neighboring Vehicle Length Estimation,,〇,,,66~100,0.5,m,0,31,0,0,*Vehicle ID (Max 64),0x73A+i*3,[0][7:0],
+30+16i,Neighboring Vehicle Width Estimation,,〇,,,66~100,0.05,m,0,12.5,-1,-1,*Vehicle ID (Max 64),0x73A+i*3,[1][7:0],
+31+16i,Number of detections,,,,,66~100,1,-,0,255,-1,-1,"Detection counter
+*Vehicle ID (Max 64)",0x73A+i*3,[2][7:0],
+32+16i,Cruising Lane,,,,,66~100,1,-,0,3,0,3,"0:not assigned,1:ego lane,2:next lane(left or right), or next next lane,3:invalid signal
+*Vehicle ID (Max 64)",0x73A+i*3,[3][1:0],
+33+16i,Neighboring vehicle speed,,,〇,,66~100,0.0625,m/s,0,245,-2048,-2048,*Vehicle ID (Max 64),0x73B+i*3,[5][7:0]+[6][3:0]<<8,
+34+16i,Relative Acceleration,,,〇,,66~100,0.03,m/s2,-14.97,14.97,-983.04,-983.04,*Vehicle ID (Max 64),0x73B+i*3,[4][7:0]+[5][1:0]<<8,
+35+16i,Neighboring vehicle eccentricy (yaw),,〇,,,66~100,0.01,deg,-327.67,327.67,-327.68,-327.68,"Directly ahead: 0
+clockwise: +
+counterclockwise: -
+*Vehicle ID (Max 64)",0x73B+i*3,[6][7:0]+[7][7:0]<<8,
+1043+7k,Object ID,,,,,66~100,1,-,0,255,-1,-1,Pedestrian/Bicyle ID (Max64),0x739+i*3,[0][7:0],
+1044+7k,Pedestrian/Bicycle Detection,,〇,,,66~100,1,-,0,2,0,0,"0: Unknown
+1: Pedestrian Detected
+2: Bicyle Detected
+Pedestrian/Bicyle ID (Max64)",0x739+i*3,[6][6:4],"0: Ordinary Car
+1: Truck
+2: Motorcyle
+3: Pedestrian
+4: Bicycle
+5: Unknown"
+1045+7k,Pedestrian/Bicycle Distance,,〇,,,66~100,0.0625,m,0,250,-1,-1,Pedestrian/Bicyle ID (Max64),0x739+i*3,[1][7:0]+[2}[3:0]<<8,
+1046+7k,"Pedestrian/Bicycle Distance
+Lateral Position",,〇,,,66~100,0.0625,m,-31.93,31.93,-2048,-2048,"Right Direction: +
+Left Direction: -
+Pedestrian/Bicyle ID (Max64)",0x739+i*3,[3][7:0]+[4][1:0]<<8,
+1047+7k,Pedestrian/Bicycle TTC,,〇,,,66~100,0.0625,s,0.0625,20,-2048,-2048,Pedestrian/Bicyle ID (Max64),"Micro Processing
+(0x739+i*3)",[5][7:0]+[6][3:0]<<8,Calculated by forward distance/relative speed
+1048+7k,Number of detections,,,,,66~100,1,-,0,255,-1,-1,"Detections Counter
+Pedestrian/Bicyle ID (Max64)",0x73A+i*3,[2][7:0],
+1049+7k,Pedestrian/Bicycle Direction of Travel,,〇,,,66~100,1,-,0,4,0,0,"0: Unknown
+1: Crossing (moving right)
+2: Crossing (moving left)
+3: moving towards ego vehicle
+4: moving away
+Pedestrian/Bicyle ID (Max64)",処理,,

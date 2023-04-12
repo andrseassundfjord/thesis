@@ -19,7 +19,7 @@ def plot_compare_timestamps(n_samples = 200, original = "results/original_rate.c
     df = df.reset_index()
     plt.plot(df.index, df["/driver/eye_opening_rate/data"], color="red", marker="o")
     plt.plot(df.index, df["/driver/eye_opening_rate/data_sampled"], ls="--", color="blue", marker="x")
-    plt.savefig("results/compare_timestamps_{}_samples".format(str(n_samples)))
+    plt.savefig("results/compare_timestamps_{}_samples_interpolate_bfill".format(str(n_samples)))
 
 def series_to_dataframe(series):
     # Set index to timestamp
@@ -37,19 +37,25 @@ def series_to_dataframe(series):
         df = df.join(new_cols.add_prefix("{}/".format(df_name)), how = "outer")
     return df
 
-def resample_dataframe(df, n_samples = 100, interpolate = False):
+def resample_dataframe(df, n_samples = 100, interpolate = False, normalize = False):
     # Replace True/False with 1/0
     df = df.replace(True, 1)
     df = df.replace(False, 0)
     # resample to n_samples samples
     min, max = df.index[0], df.index[-1]
     interval = (max - min) / (n_samples - 1)
-    resampled_df = df.resample(interval).mean(numeric_only = True).ffill()
+    if interpolate:
+        resampled_df = df.resample(interval).mean(numeric_only = True).interpolate().bfill()
+    else:
+        resampled_df = df.resample(interval).mean(numeric_only = True).ffill().bfill()
     # Some have n_samples + 1 for some reason, remove last if thats the case 
     resampled_df = resampled_df.iloc[:n_samples]
+
+    #if normalize:
+
     return resampled_df
 
-def save_single_df(path, n_samples = 200, test=False, interpolate = False):
+def save_single_df(path, n_samples = 200, test=False, interpolate = False, normalize = False):
         """
         Reformat pickled series to single dataframe, with specified number of samples.
         """
@@ -62,14 +68,14 @@ def save_single_df(path, n_samples = 200, test=False, interpolate = False):
             if len(df.index) == 0:
                 print(filename)
             else:
-                resampled_df = resample_dataframe(df, n_samples = n_samples, interpolate = interpolate)
+                resampled_df = resample_dataframe(df, n_samples = n_samples, interpolate = interpolate, normalize = normalize)
                 # Test with only one file
                 if test:
                     df.to_csv("results/original_rate.csv")
                     resampled_df.to_csv("results/resampled_rate.csv")
                     plot_compare_timestamps(n_samples = n_samples, original = "results/original_rate.csv", sampled = "results/resampled_rate.csv")
                     return
-                resampled_df.to_pickle("resampled_pickles/{}.pkl".format(filename))
+                resampled_df.to_pickle("interpolated_pickles/{}.pkl".format(filename))
 
 def get_n_samples():
     """
@@ -262,11 +268,21 @@ def compute_sample_correlation(n_files = 1, interpolate = False):
         corr_df["std_corr"][n] /= n_files
     corr_df.to_csv('results/correlation_results_nfiles{}_interpolate{}.csv'.format(str(n_files), str(interpolate)), index=False)
 
+def get_feature_names():
+    all_features = list(pd.read_csv("results/feature_statistics.csv").columns)
+    mobileye = ["/mobileye/{}/data".format(str(i)) for i in range(20, 1500)]
+    unique = []
+    for feature in all_features:
+        if feature not in mobileye:
+            unique.append(feature)
+    print(unique)
+    print(len(unique))
+
 if __name__ == "__main__":
     path = "/work5/share/NEDO/nedo-2019/data/processed_rosbags_topickles/fixed_pickles"
     #plot_statistics()
     #get_dataset_statistics()
-    get_n_samples()
-    compute_sample_correlation(n_files = 500)
-    save_single_df(n_samples = 200, test=True, interpolate = True)
-    
+    #get_n_samples()
+    #compute_sample_correlation(n_files = 500)
+    save_single_df(path, n_samples = 200, test=False, interpolate = True, normalize = True)
+    #get_feature_names()

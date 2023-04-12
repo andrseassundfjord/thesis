@@ -9,3 +9,4 @@
 /mobileye/19
 /vehicle/analog/turn_signal/data
 /vehicle/extracted_can/headlight_state/data
+/mobileye/10

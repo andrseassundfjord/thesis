@@ -1,0 +1,44 @@
+Using device: cuda
+Start training
+Time taken: 345.44 seconds
+Epoch: 9 	 Train Loss: 1116003153580452.875000	 Test Loss: 2144832717486285.500000
+Time taken: 642.29 seconds
+Epoch: 19 	 Train Loss: 131244847785926.015625	 Test Loss: 296658473434814.562500
+Time taken: 911.10 seconds
+Epoch: 29 	 Train Loss: 42019266837527.171875	 Test Loss: 109883050720670.234375
+Time taken: 1181.42 seconds
+Epoch: 39 	 Train Loss: 16351747530993.044922	 Test Loss: 51017994142238.218750
+Time taken: 1431.33 seconds
+Epoch: 49 	 Train Loss: 13149151947.867624	 Test Loss: 26572759654.843327
+Time taken: 1680.52 seconds
+Epoch: 59 	 Train Loss: 4820725322.484783	 Test Loss: 19522623224.254219
+Time taken: 1928.65 seconds
+Epoch: 69 	 Train Loss: 1834815836.674414	 Test Loss: 7801799415.790172
+Time taken: 2176.94 seconds
+Epoch: 79 	 Train Loss: 16274500.888425	 Test Loss: 31718870.631414
+Time taken: 2424.13 seconds
+Epoch: 89 	 Train Loss: 4906796.682460	 Test Loss: 11796464.211044
+Time taken: 2671.36 seconds
+Epoch: 99 	 Train Loss: 2242734.034324	 Test Loss: 5401702.886564
+Time taken: 2917.05 seconds
+Epoch: 109 	 Train Loss: 1319428.137291	 Test Loss: 3082705.076201
+Time taken: 3163.43 seconds
+Epoch: 119 	 Train Loss: 873719.043924	 Test Loss: 2007248.994319
+Time taken: 3411.07 seconds
+Epoch: 129 	 Train Loss: 556018.488171	 Test Loss: 1513304.864284
+Time taken: 3657.08 seconds
+Epoch: 139 	 Train Loss: 466175.440846	 Test Loss: 1386246.209843
+Time taken: 3902.44 seconds
+Epoch: 149 	 Train Loss: 483107.230313	 Test Loss: 1362424.417752
+Time taken: 4147.22 seconds
+Epoch: 159 	 Train Loss: 583898.115656	 Test Loss: 1269080.073934
+Time taken: 4392.90 seconds
+Epoch: 169 	 Train Loss: 509282.649424	 Test Loss: 1271409.734843
+Time taken: 4638.24 seconds
+Epoch: 179 	 Train Loss: 524817.484317	 Test Loss: 1509483.214583
+Time taken: 4885.47 seconds
+Epoch: 189 	 Train Loss: 462441.335130	 Test Loss: 1388309.516035
+Time taken: 5130.41 seconds
+Epoch: 199 	 Train Loss: 485734.619185	 Test Loss: 1426171.001799
+Finished training
+Time taken: 5130.41 seconds

@@ -100,25 +100,21 @@ class DataFrameTimeseriesDataset(Dataset):
             for i, cols in enumerate(col_lists):
                 df_name = file_list[i].split("/")[-1].split(".")[0]
                 valid_cols = [col for col in cols if col in df.columns]
-                split_df = df[valid_cols].copy()
-                # Resample df, and interpolate or ffill based on continous or categorical values
-                interpolate = "cont" in df_name
-                split_df.set_index(df.index, inplace=True)
-                resampled_df = self.resample_dataframe(split_df, interpolate=interpolate)
-                # Add all mandatory features
-                if "standard" in df_name:
-                    # if any columns are missing, add them as empty columns
-                    missing_cols = set(cols) - set(df.columns)
-                    missing_df = pd.DataFrame(columns=list(missing_cols))
-                    resampled_df = pd.concat([resampled_df, missing_df], axis=1) 
-                df_dict[df_name] = resampled_df.values.astype(np.float32)
-            # Check that mobileye features match in dimensions
-            if (df_dict["mobileye_pedestrian_cat2"].shape[1] / 2) != (df_dict["mobileye_pedestrian_cont"].shape[1] / 4):
-                print("uneven number of pedestrian features")
-            if (df_dict["mobileye_cars_cat1"].shape[1]) != (df_dict["mobileye_cars_cat2"].shape[1] / 5):
-                print("uneven number of cars features")
-            if (df_dict["mobileye_cars_cat1"].shape[1]) != (df_dict["mobileye_cars_cont"].shape[1] / 9):
-                print("uneven number of cars features")
+                if len(valid_cols) == 0 and "standard" not in df_name:
+                    df_dict[df_name] = pd.DataFrame(data=[-999]*self.n_samples, columns=['empty']).values.astype(np.float32)
+                else:
+                    split_df = df[valid_cols].copy()
+                    # Resample df, and interpolate or ffill based on continous or categorical values
+                    interpolate = "cont" in df_name
+                    split_df.set_index(df.index, inplace=True)
+                    resampled_df = self.resample_dataframe(split_df, interpolate=interpolate)
+                    # Add all mandatory features
+                    if "standard" in df_name:
+                        # if any columns are missing, add them as empty columns
+                        missing_cols = set(cols) - set(df.columns)
+                        missing_df = pd.DataFrame(columns=list(missing_cols))
+                        resampled_df = pd.concat([resampled_df, missing_df], axis=1) 
+                    df_dict[df_name] = resampled_df.values.astype(np.float32)
             # Add dict to list
             split_list.append(df_dict)
 
@@ -139,7 +135,8 @@ class DataFrameTimeseriesDataset(Dataset):
         if interpolate:
             resampled_df = df.resample(interval).mean(numeric_only = True).interpolate().bfill()
         else:
-            resampled_df = df.resample(interval).mean(numeric_only = True).ffill().bfill()
+            #resampled_df = df.resample(interval).mean(numeric_only = True).ffill().bfill()
+            resampled_df = df.resample(interval).median(numeric_only = True).ffill().bfill()
         # Some have n_samples + 1 for some reason, remove last if thats the case 
         resampled_df = resampled_df.iloc[:self.n_samples]
         return resampled_df
@@ -149,12 +146,32 @@ class DataFrameTimeseriesDataset(Dataset):
 
     def __getitem__(self, idx):
         data_dict = self.split_list[idx]
+        data_list = [torch.tensor(data) for data in data_dict.values()]
         # Extract the timestamp column and convert to a numpy array
         #timestamps = data.index.values.astype(np.int64) // 10 ** 9
         # Use the timestamps for anything?
         # Extract the data columns and convert to a numpy array
         #data = data.values.astype(np.float32)
-        return data_dict
+        return data_list
+
+def custom_collate(batch, padding_value=-999):
+    # Get the longest length in the batch
+    max_lens = [max([data[i].shape[1] for data in batch]) for i in range(len(batch[0]))]
+
+    # Initialize list to hold the padded tensors
+    padded_batch = [[] for _ in range(len(batch[0]))]
+
+    # Pad each tensor with the custom padding value along its second dimension
+    for sample in batch:
+        for i, data in enumerate(sample):
+            padding_needed = max_lens[i] - data.shape[1]
+            padded_data = torch.cat([data, torch.full((data.shape[0], padding_needed), padding_value)], dim=1)
+            padded_batch[i].append(padded_data)
+
+    # Stack the tensors along the first dimension
+    stacked_tensors = [torch.stack(padded_data_list, dim=0) for padded_data_list in padded_batch]
+
+    return stacked_tensors
 
 def load_data(folder_path, video_path):
     class_dict = {}
@@ -228,8 +245,8 @@ def split_data(class_dict, train_ratio=0.7, batch_size = 32, save = False):
     #test_dataloader = DataLoader(test_dataset, batch_size=32, shuffle=False)
     video_train_dataloader = DataLoader(video_dataset_train, batch_size=batch_size, shuffle=True)
     video_test_dataloader = DataLoader(video_dataset_test, batch_size=batch_size, shuffle=False)
-    timeseries_train_dataloader = DataLoader(timeseries_dataset_train, batch_size=batch_size, shuffle=True)
-    timeseries_test_dataloader = DataLoader(timeseries_dataset_test, batch_size=batch_size, shuffle=False)
+    timeseries_train_dataloader = DataLoader(timeseries_dataset_train, batch_size=batch_size, shuffle=True, collate_fn = custom_collate)
+    timeseries_test_dataloader = DataLoader(timeseries_dataset_test, batch_size=batch_size, shuffle=False, collate_fn = custom_collate)
     if save:
         torch.save(video_train_dataloader, 'dataloaders/video_train_dataloader.pth')
         torch.save(video_test_dataloader, 'dataloaders/video_test_dataloader.pth')

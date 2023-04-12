@@ -1,0 +1,24 @@
+Using device: cuda
+Start training
+Time taken: 502.47 seconds
+Epoch: 9 	 Train Loss: 13284.311613	 Test Loss: 10037.614718
+Time taken: 966.18 seconds
+Epoch: 19 	 Train Loss: 9527.734383	 Test Loss: 5212.674701
+Time taken: 1415.67 seconds
+Epoch: 29 	 Train Loss: 7959.157074	 Test Loss: 5859.760880
+Time taken: 1913.70 seconds
+Epoch: 39 	 Train Loss: 8070.241896	 Test Loss: 5978.658208
+Time taken: 2434.96 seconds
+Epoch: 49 	 Train Loss: 7354.026905	 Test Loss: 5463.536343
+Time taken: 2882.85 seconds
+Epoch: 59 	 Train Loss: 8110.999363	 Test Loss: 5422.936246
+Time taken: 3449.64 seconds
+Epoch: 69 	 Train Loss: 7539.371945	 Test Loss: 6611.556443
+Time taken: 4029.64 seconds
+Epoch: 79 	 Train Loss: 7177.957524	 Test Loss: 6154.249470
+Time taken: 4620.74 seconds
+Epoch: 89 	 Train Loss: 7494.127052	 Test Loss: 5635.663657
+Time taken: 5125.31 seconds
+Epoch: 99 	 Train Loss: 7428.159709	 Test Loss: 5179.364294
+Finished training
+Time taken: 5125.31 seconds
