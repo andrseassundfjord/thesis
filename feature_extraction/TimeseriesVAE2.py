@@ -58,6 +58,10 @@ class TimeseriesVAE2(nn.Module):
                 feature = input_type[:, :, feature_idx].unsqueeze(-1)
                 encoded = self.encoder_list[idx](feature)
                 encoded_list.append(encoded)
+
+        nan_mask = torch.isnan(encoded_list[0][0])
+        if torch.any(nan_mask):
+            print("nan in encoded_list[0]", flush = True)
         
         encoded = tuple(torch.sum(torch.stack(tensors), dim=0) for tensors in zip(*encoded_list))
         kl_divergence = -0.5 * torch.sum(1 + encoded[2] - encoded[1].pow(2) - encoded[2].exp(), dim=1).mean()
@@ -70,8 +74,11 @@ class TimeseriesVAE2(nn.Module):
                 decoded = self.decoder_list[idx](encoded[0])
                 decoded_list.append(decoded)
                 idx += 1
-
+                
         decoded_cat = torch.cat(decoded_list, dim = -1)
+        nan_mask = torch.isnan(decoded_cat[0])
+        if torch.any(nan_mask):
+            print("nan in decoded_cat", flush = True)
 
         return decoded_cat, kl_divergence
 

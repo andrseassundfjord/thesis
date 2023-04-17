@@ -1,7 +1,0 @@
-Using device: cuda
-Number of trainable parameters: 128321888
-Start training
-Time taken: 1197.69 seconds
-Epoch: 9 	 Train Loss: nan	 Test Loss: nan
-Finished training
-Time taken: 1197.69 seconds

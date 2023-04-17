@@ -51,7 +51,8 @@ class VideoEncoder(nn.Module):
         # Weight init
         for m in self.model:
             if isinstance(m, (nn.Conv2d, nn.Conv3d, nn.Linear)):
-                init.kaiming_uniform_(m.weight, mode='fan_in', nonlinearity='leaky_relu')
+                #init.kaiming_uniform_(m.weight, mode='fan_in', nonlinearity='leaky_relu')
+                init.kaiming_normal_(m.weight, mode='fan_in', nonlinearity='leaky_relu')
                 if m.bias is not None:
                     init.constant_(m.bias, 0.0)
 
@@ -111,7 +112,8 @@ class VideoDecoder(nn.Module):
         # Weight init
         for m in self.model:
             if isinstance(m, (nn.ConvTranspose3d, nn.Linear)):
-                init.kaiming_uniform_(m.weight, mode='fan_in', nonlinearity='leaky_relu')
+                #init.kaiming_uniform_(m.weight, mode='fan_in', nonlinearity='leaky_relu')
+                init.kaiming_normal_(m.weight, mode='fan_in', nonlinearity='leaky_relu')
                 if m.bias is not None:
                     init.constant_(m.bias, 0.0)
 
@@ -254,19 +256,24 @@ class TimeseriesEncoder2(nn.Module):
         self.num_layers = num_layers
         self.bidirectional = bidirectional
         self.categorical = categorical
+        self.seq_len = 200
         
-        if categorical is not None:
-            self.embedding = nn.Embedding(num_embeddings=categorical, embedding_dim=embedding_dim)
-            self.input_dim = embedding_dim
-
-        self.lstm = nn.LSTM(self.input_dim, hidden_dim, num_layers=num_layers, batch_first = True, dropout = dropout, bidirectional = self.bidirectional)
+        #if self.categorical is not None:
+        #    self.embedding = nn.Embedding(num_embeddings=categorical, embedding_dim=embedding_dim)
+        #    self.input_dim = embedding_dim
+        self.lstm = nn.LSTM(self.input_dim * self.seq_len, hidden_dim, num_layers=num_layers, batch_first = True, dropout = dropout, bidirectional = self.bidirectional)
+        """for name, param in self.lstm.named_parameters():
+            if 'weight' in name:
+                init.xavier_normal_(param)
+            elif 'bias' in name:
+                init.constant_(param, 0.0)"""
         #self.gru = nn.GRU(self.input_dim, hidden_dim, num_layers = num_layers, batch_first = True, dropout = dropout, bidirectional = self.bidirectional)
         self.flatten = Flatten()
-        self.fc1 = nn.Linear(hidden_dim * 200, hidden_dim * 2)
+        self.fc1 = nn.Linear(hidden_dim, hidden_dim * 2)
         self.fc_mean = nn.Linear(hidden_dim * 2, latent_dim)
         self.fc_logvar = nn.Linear(hidden_dim * 2, latent_dim)
         # Define batchnorm
-        self.bn = nn.BatchNorm1d(200)
+        self.bn = nn.BatchNorm1d(hidden_dim)
 
     def forward(self, x):
         """
@@ -274,9 +281,11 @@ class TimeseriesEncoder2(nn.Module):
         """
         if self.categorical is not None:
             x = self.embedding(x)
+            print("Embed", flush = True)
+        x = self.flatten(x)
         lstm_out, _ = self.lstm(x)
         lstm_out = self.bn(lstm_out)
-        lstm_out = self.flatten(lstm_out)
+        #lstm_out = self.flatten(lstm_out)
         z = F.relu(self.fc1(lstm_out))
         z_mean = self.fc_mean(z)
         z_logvar = self.fc_logvar(z)

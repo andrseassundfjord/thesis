@@ -8,6 +8,9 @@ from MVAE import MVAE
 from TimeseriesVAE import TimeseriesVAE
 from TimeseriesVAE2 import TimeseriesVAE2
 from VideoVAE import VideoVAE
+from VideoAutoencoder import VideoAutoencoder
+from VideoBert import VideoBERT
+from VideoBERT_pretrained import VideoBERT_pretrained
 import time
 import csv
 from torch.optim.lr_scheduler import CosineAnnealingLR, ReduceLROnPlateau, StepLR
@@ -75,7 +78,7 @@ def run(
     input_dims = [(frame_len, size, size, 3), (200, 352)] # (200, 352) is not actually used, but manually set in TimeseriesVAE and MVAE
     num_features_list = [29, 6, 12, 4, 1, 9, 1, 5]
 
-    # Initialize MVAE model
+    # Initialize model
     model = model_arg(input_dims=input_dims, 
                         latent_dim=latent_dim, 
                         hidden_layers = [video_hidden_shape,
@@ -84,10 +87,8 @@ def run(
                         dropout = dropout
                     ).to(device)
 
-    params = list(model.parameters())
     # Define loss function
     reconstruction_loss = nn.MSELoss(reduction='sum')
-    bert_loss = nn.CrossEntropyLoss()
 
     # Define optimizer
     optimizer = optimizer_arg(model.parameters(), lr=lr)
@@ -100,7 +101,8 @@ def run(
     # Train model
     train_losses = []
     test_losses = []
-
+    best_val_loss = float(math.inf)
+    best_val_loss_epoch = 0
     start_time = time.time()
     print("Start training")
     for epoch in range(num_epochs):
@@ -114,6 +116,12 @@ def run(
                 recon_video, kl_divergence, _ = model(video)
                 loss = reconstruction_loss(recon_video, video)
                 loss += kl_divergence
+            elif model.__class__.__name__ == "VideoAutoencoder":
+                # Move data to device
+                video = video.to(device)
+                # Forward pass
+                recon_video, _ = model(video)
+                loss = reconstruction_loss(recon_video, video)
             elif model.__class__.__name__ == "TimeseriesVAE":
                 # Move data to device
                 timeseries = [t.to(device) for t in timeseries]
@@ -154,8 +162,7 @@ def run(
                     mask = nan_mask | missing_mask
                     masks.append(mask)
                     # If features are continous
-                    if idx in [0, 3, 5]:
-                        timeseries[idx] = F.normalize(t, p=1, dim=1)
+                    timeseries[idx] = F.normalize(t, p=1, dim=1)
                 timeseries_input = [mask_features(t, batch_size, num_features_list[idx]).to(device) for idx, t in enumerate(timeseries)]
                 # Forward pass
                 recon_timeseries, kl_divergence = model(timeseries_input)
@@ -163,16 +170,13 @@ def run(
                 recon_split = []
                 recon_split.extend(torch.split(recon_timeseries, [t.size(2) for t in timeseries], dim=-1))
                 for recon, nan_mask, t in zip(recon_split, masks, timeseries):
-                    nan_mask = torch.isnan(recon)
-                    if torch.any(nan_mask):
-                        print("nan in recon")
                     loss += reconstruction_loss(recon[~nan_mask], t[~nan_mask])
-            elif model.__class__.__name__ == "VideoBert":
+            elif model.__class__.__name__ == "VideoBERT":
                 # Move data to device
                 video = video.to(device)
                 # Forward pass
-                output = model(video)
-                loss = bert_loss(output) # add labels
+                latent_representation, reconstructed = model(video)
+                loss = reconstruction_loss(reconstructed, video)
             else:
                 # Move data to device
                 video = video.to(device)
@@ -205,6 +209,12 @@ def run(
                     recon_video, kl_divergence, _ = model(video)
                     loss = reconstruction_loss(recon_video, video)
                     loss += kl_divergence
+                elif model.__class__.__name__ == "VideoAutoencoder":
+                    # Move data to device
+                    video = video.to(device)
+                    # Forward pass
+                    recon_video, _ = model(video)
+                    loss = reconstruction_loss(recon_video, video)
                 elif model.__class__.__name__ == "TimeseriesVAE":
                     # Move data to device
                     timeseries = [t.to(device) for t in timeseries]
@@ -244,8 +254,7 @@ def run(
                         mask = nan_mask | missing_mask
                         masks.append(mask)
                         # If features are continous
-                        if idx in [0, 3, 5]:
-                            timeseries[idx] = F.normalize(t, p=1, dim=1)
+                        timeseries[idx] = F.normalize(t, p=1, dim=1)
                     timeseries_input = [mask_features(t, batch_size, num_features_list[idx]).to(device) for idx, t in enumerate(timeseries)]
                     # Forward pass
                     recon_timeseries, kl_divergence = model(timeseries)
@@ -254,12 +263,12 @@ def run(
                     recon_split.extend(torch.split(recon_timeseries, [t.size(2) for t in timeseries], dim=-1))
                     for recon, nan_mask, t in zip(recon_split, masks, timeseries):
                         loss += reconstruction_loss(recon[~nan_mask], t[~nan_mask])
-                elif model.__class__.__name__ == "VideoBert":
+                elif model.__class__.__name__ == "VideoBERT":
                     # Move data to device
                     video = video.to(device)
                     # Forward pass
-                    output = model(video)
-                    loss = bert_loss(output) # add labels
+                    latent_representation, reconstructed = model(video)
+                    loss = reconstruction_loss(reconstructed, video)
                 else:
                     # Move data to device
                     video = video.to(device)
@@ -277,6 +286,9 @@ def run(
         #scheduler.step() # for other
         test_loss /= len(video_test_loader.dataset)
         test_losses.append(test_loss)
+        if test_loss < best_val_loss:
+            best_val_loss = test_loss
+            best_val_loss_epoch = epoch
         # Print loss
         if ( epoch + 1 ) % 10 == 0:
             end_time = time.time()
@@ -286,6 +298,7 @@ def run(
     print("Finished training")
     end_time = time.time()
     print(f"Time taken: {end_time - start_time:.2f} seconds")
+    print(f"Best test loss: {best_val_loss:.6f} at epoch: {best_val_loss_epoch}")
 
     plot_loss(train_losses, test_losses, "results/loss_plots/{}".format(savename), num_epochs)
     num_params = sum(p.numel() for p in model.parameters())
@@ -358,18 +371,18 @@ def plot_num_frames(num_frames):
 
 if __name__ == "__main__":
     run(
-        "test",
+        "videoBert3d_inc_latent",
         load = True,
         train_ratio = 0.7,
         batch_size = 32,
-        lr = 0.0001,
-        num_epochs = 10,
-        latent_dim = 256,
+        lr = 0.00001,
+        num_epochs = 100,
+        latent_dim = 512,
         optimizer_arg = optim.Adam,
-        model_arg = TimeseriesVAE2,
+        model_arg = VideoBERT,
         video_hidden_shape = [32, 64, 128, 256],
         timeseries_hidden_dim = 64,
         timeseries_num_layers = 3,
-        dropout = 0.1,
+        dropout = 0.2,
         save = False
     )

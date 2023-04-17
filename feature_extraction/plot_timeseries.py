@@ -6,18 +6,21 @@ import numpy as np
 import os
 import math
 import torchvision.transforms.functional as TF
+from load_dataset import get_dataloaders, VideoDataset, DataFrameTimeseriesDataset
+from TimeseriesVAE import TimeseriesVAE
+
 
 def get_timeseries():
     video_train_loader, video_test_loader, timeseries_train_loader, timeseries_test_loader = get_dataloaders(
                                                     '/work5/share/NEDO/nedo-2019/data/processed_rosbags_topickles/fixed_pickles', 
                                                     "/work5/share/NEDO/nedo-2019/data/01_driving_data/movie", 
-                                                    train_ratio = train_ratio,
-                                                    batch_size = batch_size, 
+                                                    train_ratio = 0.7,
+                                                    batch_size = 32, 
                                                     save = True,
                                                     load = True
                                                 )
-
-
+    for timeseries in timeseries_test_loader:
+        return timeseries
 
 def save_plots():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -31,9 +34,10 @@ def save_plots():
     # Set the model to evaluation mode
     model.eval()
 
-    timeseries = get_video()
+    timeseries = get_timeseries()
     timeseries = timeseries.to(device)
-    decoded, kl, encoded = model(timeseries)
+    decoded, kl = model(timeseries)
+    
 
     print("Finished")
 
