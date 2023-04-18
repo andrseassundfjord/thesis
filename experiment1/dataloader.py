@@ -8,15 +8,37 @@ import math
 import matplotlib.pyplot as plt
 import seaborn as sns
 import random
+import tkinter as tk
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.patches import Rectangle
 
-def plot_compare_timestamps(n_samples = 200, original = "results/original_rate.csv", sampled = "results/resampled_rate.csv"):
+def plot_compare_timestamps(n_samples = 200, original = "results/original_rate.csv", sampled = "results/resampled_rate.csv", interpolate = False):
+    if interpolate:
+        feature_name = "/driver/eye_opening_rate/data"
+    else:
+        #feature_name = "/gps_m2/vehicle/turn_state/data"
+        feature_name = "/vehicle/analog/turn_signal/data"
     baseline = pd.read_csv(original)
     test = pd.read_csv(sampled)
     baseline = baseline.set_index(baseline["Unnamed: 0"])
     test = test.set_index(test["Unnamed: 0"])
-    df = baseline["/driver/eye_opening_rate/data"].to_frame()
-    df = df.join(test["/driver/eye_opening_rate/data"].to_frame().add_suffix("_sampled"), how = "outer")
+    df = baseline[feature_name].to_frame()
+    df = df.join(test[feature_name].to_frame().add_suffix("_sampled"), how = "outer")
     df = df.reset_index()
+    # Create a figure and subplots
+    fig, ax = plt.subplots()
+    ax.plot(df.index, df[feature_name], color="red", marker="o")
+    ax.plot(df.index, df[feature_name + "_sampled"], ls="--", color="blue", marker="x")
+    ax.set_title(f"{n_samples} samples")
+    fig.canvas.draw()
+    buffer = np.array(fig.canvas.buffer_rgba())
+    plt.close(fig)
+    return buffer
+    # Add a main title to the figure
+    fig.suptitle('Four Plots')
+
+    # Adjust the spacing between subplots
+    plt.subplots_adjust(wspace=0.3, hspace=0.3)
     plt.plot(df.index, df["/driver/eye_opening_rate/data"], color="red", marker="o")
     plt.plot(df.index, df["/driver/eye_opening_rate/data_sampled"], ls="--", color="blue", marker="x")
     plt.savefig("results/compare_timestamps_{}_samples_interpolate_bfill".format(str(n_samples)))
@@ -47,7 +69,7 @@ def resample_dataframe(df, n_samples = 100, interpolate = False, normalize = Fal
     if interpolate:
         resampled_df = df.resample(interval).mean(numeric_only = True).interpolate().bfill()
     else:
-        resampled_df = df.resample(interval).mean(numeric_only = True).ffill().bfill()
+        resampled_df = df.resample(interval).median(numeric_only = True).ffill().bfill()
     # Some have n_samples + 1 for some reason, remove last if thats the case 
     resampled_df = resampled_df.iloc[:n_samples]
 
@@ -60,7 +82,7 @@ def save_single_df(path, n_samples = 200, test=False, interpolate = False, norma
         Reformat pickled series to single dataframe, with specified number of samples.
         """
         files = os.listdir(path)
-        for filename in files:
+        for idx, filename in enumerate(files):
             # Read pickle
             series = pd.read_pickle(path + "/" + filename)
             df = series_to_dataframe(series)
@@ -71,11 +93,54 @@ def save_single_df(path, n_samples = 200, test=False, interpolate = False, norma
                 resampled_df = resample_dataframe(df, n_samples = n_samples, interpolate = interpolate, normalize = normalize)
                 # Test with only one file
                 if test:
+                    if idx < 5 and not interpolate:
+                        continue
                     df.to_csv("results/original_rate.csv")
                     resampled_df.to_csv("results/resampled_rate.csv")
-                    plot_compare_timestamps(n_samples = n_samples, original = "results/original_rate.csv", sampled = "results/resampled_rate.csv")
-                    return
+                    return plot_compare_timestamps(n_samples = n_samples, original = "results/original_rate.csv", sampled = "results/resampled_rate.csv", interpolate=interpolate)
                 resampled_df.to_pickle("interpolated_pickles/{}.pkl".format(filename))
+
+def plot_together():
+    """
+    This function combines four plots into a 2x2 grid.
+    """
+    path = "/work5/share/NEDO/nedo-2019/data/processed_rosbags_topickles/fixed_pickles"
+    # Call the plot function for each dataset
+    fig1 = save_single_df(path, n_samples=50, test = True, interpolate=True)
+    fig2 = save_single_df(path, n_samples=100, test = True, interpolate=True)
+    fig3 = save_single_df(path, n_samples=150, test = True, interpolate=True)
+    fig4 = save_single_df(path, n_samples=200, test = True, interpolate=True)
+    # Combine the subplots into a grid
+    fig = plt.figure(figsize=(8, 8))
+    fig.suptitle("Blink rate")
+
+    for i, f in enumerate([fig1, fig2, fig3, fig4]):
+        ax = fig.add_subplot(2, 2, i+1)
+        ax.imshow(f)
+        ax.axis('off')
+
+    fig.tight_layout()
+
+    print("finished first", flush = True)
+    plt.savefig("results/blink_rate_resampled_all")
+    plt.clf()
+    # Call the plot function for each dataset
+    fig1 = save_single_df(path, n_samples=50, test = True, interpolate=False)
+    fig2 = save_single_df(path, n_samples=100, test = True, interpolate=False)
+    fig3 = save_single_df(path, n_samples=150, test = True, interpolate=False)
+    fig4 = save_single_df(path, n_samples=200, test = True, interpolate=False)
+    
+    # Combine the subplots into a grid
+    fig = plt.figure(figsize=(8, 8))
+    fig.suptitle("Turn signal")
+    for i, f in enumerate([fig1, fig2, fig3, fig4]):
+        ax = fig.add_subplot(2, 2, i+1)
+        ax.imshow(f)
+        ax.axis('off')
+
+    fig.tight_layout()
+
+    plt.savefig("results/lanes_resampled_all")
 
 def get_n_samples():
     """
@@ -284,5 +349,6 @@ if __name__ == "__main__":
     #get_dataset_statistics()
     #get_n_samples()
     #compute_sample_correlation(n_files = 500)
-    save_single_df(path, n_samples = 200, test=False, interpolate = True, normalize = True)
+    #save_single_df(path, n_samples = 200, test=False, interpolate = True, normalize = True)
     #get_feature_names()
+    plot_together()

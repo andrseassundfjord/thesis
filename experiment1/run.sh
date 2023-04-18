@@ -8,4 +8,4 @@ source ../env/bin/activate
 
 #python test.py
 #python dataloader.py
-python run_NN.py
+python dataloader.py

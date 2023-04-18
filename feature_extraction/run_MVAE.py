@@ -368,13 +368,13 @@ def plot_num_frames(num_frames):
 
 if __name__ == "__main__":
     run(
-        "videoBert3d_",
+        "videoBert3d_init_activation",
         load = True,
         train_ratio = 0.7,
         batch_size = 32,
         lr = 0.00001,
         num_epochs = 100,
-        latent_dim = 1024,
+        latent_dim = 256,
         optimizer_arg = optim.Adam,
         model_arg = VideoBERT,
         video_hidden_shape = [16, 32, 64, 128],
