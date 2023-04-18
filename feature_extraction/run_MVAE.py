@@ -35,6 +35,14 @@ def mask_features(tensor, batch_size, num_features):
             masked[batch_idx, :, feature_idx] = 0.0
     return masked
 
+def reg_loss(model):
+    # Regularization term
+    reg_loss = 0
+    for param in model.parameters():
+        reg_loss += torch.sum(torch.square(param))
+    # Total loss
+    return 0.1 * reg_loss
+
 def run(
         savename,
         load = True,
@@ -116,12 +124,6 @@ def run(
                 recon_video, kl_divergence, _ = model(video)
                 loss = reconstruction_loss(recon_video, video)
                 loss += kl_divergence
-            elif model.__class__.__name__ == "VideoAutoencoder":
-                # Move data to device
-                video = video.to(device)
-                # Forward pass
-                recon_video, _ = model(video)
-                loss = reconstruction_loss(recon_video, video)
             elif model.__class__.__name__ == "TimeseriesVAE":
                 # Move data to device
                 timeseries = [t.to(device) for t in timeseries]
@@ -171,12 +173,13 @@ def run(
                 recon_split.extend(torch.split(recon_timeseries, [t.size(2) for t in timeseries], dim=-1))
                 for recon, nan_mask, t in zip(recon_split, masks, timeseries):
                     loss += reconstruction_loss(recon[~nan_mask], t[~nan_mask])
-            elif model.__class__.__name__ == "VideoBERT":
+            elif model.__class__.__name__ == "VideoBERT" or model.__class__.__name__ == "VideoBERT_pretrained" or model.__class__.__name__ == "VideoAutoencoder":
                 # Move data to device
                 video = video.to(device)
                 # Forward pass
                 latent_representation, reconstructed = model(video)
                 loss = reconstruction_loss(reconstructed, video)
+                loss += reg_loss(model)
             else:
                 # Move data to device
                 video = video.to(device)
@@ -209,12 +212,6 @@ def run(
                     recon_video, kl_divergence, _ = model(video)
                     loss = reconstruction_loss(recon_video, video)
                     loss += kl_divergence
-                elif model.__class__.__name__ == "VideoAutoencoder":
-                    # Move data to device
-                    video = video.to(device)
-                    # Forward pass
-                    recon_video, _ = model(video)
-                    loss = reconstruction_loss(recon_video, video)
                 elif model.__class__.__name__ == "TimeseriesVAE":
                     # Move data to device
                     timeseries = [t.to(device) for t in timeseries]
@@ -263,7 +260,7 @@ def run(
                     recon_split.extend(torch.split(recon_timeseries, [t.size(2) for t in timeseries], dim=-1))
                     for recon, nan_mask, t in zip(recon_split, masks, timeseries):
                         loss += reconstruction_loss(recon[~nan_mask], t[~nan_mask])
-                elif model.__class__.__name__ == "VideoBERT":
+                elif model.__class__.__name__ == "VideoBERT" or model.__class__.__name__ == "VideoBERT_pretrained" or model.__class__.__name__ == "VideoAutoencoder":
                     # Move data to device
                     video = video.to(device)
                     # Forward pass
@@ -371,16 +368,16 @@ def plot_num_frames(num_frames):
 
 if __name__ == "__main__":
     run(
-        "videoBert3d_inc_latent",
+        "videoBert3d_",
         load = True,
         train_ratio = 0.7,
         batch_size = 32,
         lr = 0.00001,
         num_epochs = 100,
-        latent_dim = 512,
+        latent_dim = 1024,
         optimizer_arg = optim.Adam,
         model_arg = VideoBERT,
-        video_hidden_shape = [32, 64, 128, 256],
+        video_hidden_shape = [16, 32, 64, 128],
         timeseries_hidden_dim = 64,
         timeseries_num_layers = 3,
         dropout = 0.2,

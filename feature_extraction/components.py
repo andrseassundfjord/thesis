@@ -56,8 +56,8 @@ class VideoEncoder(nn.Module):
                 if m.bias is not None:
                     init.constant_(m.bias, 0.0)
 
-        init.kaiming_uniform_(self.fc_mu.weight, mode='fan_in', nonlinearity='leaky_relu')
-        init.kaiming_uniform_(self.fc_log_var.weight, mode='fan_in', nonlinearity='leaky_relu')
+        init.kaiming_normal_(self.fc_mu.weight, mode='fan_in', nonlinearity='leaky_relu')
+        init.kaiming_normal_(self.fc_log_var.weight, mode='fan_in', nonlinearity='leaky_relu')
 
 
     def reparameterize(self, mu, log_var):

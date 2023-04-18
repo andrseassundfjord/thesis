@@ -1,0 +1,15 @@
+Using device: cuda
+Start training
+Time taken: 390.34 seconds
+Epoch: 9 	 Train Loss: 3337838.785296	 Test Loss: 3393953.264198
+Time taken: 747.40 seconds
+Epoch: 19 	 Train Loss: 3058698.587107	 Test Loss: 2702659.316049
+Time taken: 1100.58 seconds
+Epoch: 29 	 Train Loss: 2838433.091103	 Test Loss: 2870127.777778
+Time taken: 1451.90 seconds
+Epoch: 39 	 Train Loss: 2828657.095365	 Test Loss: 2894758.306173
+Time taken: 1797.86 seconds
+Epoch: 49 	 Train Loss: 2830209.137986	 Test Loss: 2892928.434568
+Time taken: 2141.88 seconds
+Epoch: 59 	 Train Loss: 2831175.520511	 Test Loss: 2884897.404938
+slurmstepd: error: *** JOB 5518224 ON tuatara CANCELLED AT 2023-04-18T10:34:20 ***

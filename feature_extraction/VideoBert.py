@@ -11,13 +11,14 @@ class VideoBERT(nn.Module):
         padding = (0, 1, 1)
         transformer_layers=2
         output_size = input_dims[0][1]
-        for _ in range(3):
+        for _ in range(4):
             output_size = int((output_size - kernel_size[1] + 2*padding[1])/stride[1]) + 1
-        self.transformer_d_model = 1024
+        #self.transformer_d_model = 1024
+        self.transformer_d_model = hidden_layers[0][-1] * output_size ** 2
         transformer_num_heads = 8
         transformer_dff = 2048
         transformer_dropout = dropout
-        cnn_filters = hidden_layers[0][1:]
+        cnn_filters = hidden_layers[0]
         cnn_layers = []
         in_channels = input_dims[0][3]
         # Define 3D CNN encoder
@@ -28,7 +29,7 @@ class VideoBERT(nn.Module):
             in_channels = cnn_filters[i]
         self.cnn_encoder = nn.Sequential(*cnn_layers)
 
-        self.fc_middle = nn.Linear(in_channels * output_size ** 2, self.transformer_d_model)
+        #self.fc_middle = nn.Linear(in_channels * output_size ** 2, self.transformer_d_model)
         # Define Transformer encoder
         self.transformer_encoder = nn.TransformerEncoder(
             nn.TransformerEncoderLayer(
@@ -48,8 +49,19 @@ class VideoBERT(nn.Module):
                 if m.bias is not None:
                     init.constant_(m.bias, 0.0)
 
+        for name, param in self.transformer_encoder.named_parameters():
+            if 'weight' in name:
+                init.kaiming_normal_(param)
+            elif 'bias' in name:
+                init.constant_(param, 0.0)
+
         # Add a new linear layer to output the latent representation
         self.fc = nn.Linear(self.transformer_d_model, latent_dim)
+        init.kaiming_normal_(self.fc.weight, mode='fan_in', nonlinearity='leaky_relu')
+        #init.kaiming_normal_(self.fc_middle.weight, mode='fan_in', nonlinearity='leaky_relu')
+
+        # Activation function 
+        self.activation = nn.LeakyReLU()
 
         self.decoder = VideoBERTDecoder(self.transformer_d_model, latent_dim, input_dims[0][0], cnn_filters=cnn_filters,
                                         kernel_size = kernel_size, stride = stride, padding = padding, input_size = output_size)
@@ -68,9 +80,9 @@ class VideoBERT(nn.Module):
         cnn_encoded = cnn_encoded.view(batch_size, num_frames, -1)
         # Transpose the feature tensor to be compatible with the transformer input
         cnn_encoded = cnn_encoded.permute(1, 0, 2)  # shape: (num_frames, batch_size, transformer_d_model)
-        cnn_encoded = self.fc_middle(cnn_encoded)
+        #cnn_encoded = self.fc_middle(cnn_encoded)
         # Encode CNN output using Transformer encoder
-        encoded_features = self.transformer_encoder(cnn_encoded)
+        encoded_features = self.activation(self.transformer_encoder(cnn_encoded))
         # Take the last encoded frame as the representation of the input video
         encoded_video = encoded_features[-1, :, :]  # shape: (batch_size, transformer_d_model)
         # Apply the final linear layer to obtain the latent representation
@@ -97,13 +109,23 @@ class VideoBERTDecoder(nn.Module):
         # Add a linear layer to map the latent representation to the transformer input
         self.fc1 = nn.Linear(latent_dim, transformer_d_model)
         self.fc2 = nn.Linear(latent_dim, transformer_d_model)
-        self.fc3 = nn.Linear(transformer_d_model, cnn_filters[-1] * input_size ** 2)
+        #self.fc3 = nn.Linear(transformer_d_model, cnn_filters[-1] * input_size ** 2)
+        self.activation = nn.LeakyReLU()
+
+        init.kaiming_normal_(self.fc1.weight, mode='fan_in', nonlinearity='leaky_relu')
+        init.kaiming_normal_(self.fc2.weight, mode='fan_in')
 
         # Add a transformer decoder layer
         self.transformer_decoder_layer = nn.TransformerDecoderLayer(d_model=transformer_d_model, 
                                                                     nhead=transformer_num_heads,
                                                                     dim_feedforward=transformer_dff)
         self.transformer_decoder = nn.TransformerDecoder(self.transformer_decoder_layer, num_layers=transformer_layers)
+
+        for name, param in self.transformer_decoder.named_parameters():
+            if 'weight' in name:
+                init.kaiming_normal_(param)
+            elif 'bias' in name:
+                init.constant_(param, 0.0)
 
         # Add a convolutional layer to generate the predicted future frames
         cnn_layers = []
@@ -125,7 +147,7 @@ class VideoBERTDecoder(nn.Module):
 
     def forward(self, encoded_video):
         # Apply the first linear layer to obtain the transformer input
-        transformer_input = self.fc1(encoded_video)  # shape: (batch_size, transformer_d_model)
+        transformer_input = self.activation(self.fc1(encoded_video))  # shape: (batch_size, transformer_d_model)
         # Expand the transformer input to have the same length as the predicted frames
         transformer_input = transformer_input.unsqueeze(1).expand(-1, self.num_predicted_frames, -1)  # shape: (batch_size, num_predicted_frames, transformer_d_model)
         transformer_input = transformer_input.permute(1, 0, 2)
@@ -141,7 +163,8 @@ class VideoBERTDecoder(nn.Module):
 
         # Apply the transformer decoder to generate the predicted future frames
         decoded_frames = self.transformer_decoder(transformer_input, memory, tgt_mask=mask)  # shape: (num_predicted_frames, batch_size, transformer_d_model)
-        decoded_frames = self.fc3(decoded_frames)
+        decoded_frames = self.activation(decoded_frames)
+        #decoded_frames = self.fc3(decoded_frames)
         # Transpose the decoded frames tensor to be compatible with the convolutional layer
         decoded_frames = decoded_frames.permute(1, 2, 0)  # shape: (batch_size, transformer_d_model, num_predicted_frames)
 

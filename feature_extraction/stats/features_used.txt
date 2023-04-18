@@ -71,7 +71,7 @@ Categorical with more than 2 classes:
 /mobileye/3 - 7 classes
 /mobileye/11 - 3 classes
 /mobileye/15 - 3 classes
-/mobileye/19 - 6 classes
+/mobileye/19 - 6 classes 
 /mobileye/1044 + 7k - 3 classes
 /mobileye/1049 + 7k - 5 classes
 /vehicle/analog/turn_signal/data - 4 classes
