@@ -14,6 +14,16 @@ import pandas as pd
 import math
 import time
 
+class LabelDataset(Dataset):
+    def __init__(self, labels):
+        self.labels = labels 
+
+    def __len__(self):
+        return len(self.labels)
+
+    def __getitem__(self, idx):
+        return self.labels[idx]
+
 class VideoDataset(Dataset):
     def __init__(self, file_paths, frame_len = 64, size = 128):
         self.file_paths = file_paths
@@ -236,7 +246,9 @@ def split_data(class_dict, train_ratio=0.7, batch_size = 32, save = False):
     video_dataset_train = VideoDataset(video_list_train)
     video_dataset_test = VideoDataset(video_list_test)
     timeseries_dataset_train = DataFrameTimeseriesDataset(timeseries_list_train)
-    timeseries_dataset_test = DataFrameTimeseriesDataset(timeseries_list_train)
+    timeseries_dataset_test = DataFrameTimeseriesDataset(timeseries_list_test)
+    label_dataset_train = LabelDataset(train_labels)
+    label_dataset_test = LabelDataset(test_labels)
     # Concat datasets
     #train_dataset = ConcatDataset([video_dataset_train, timeseries_dataset_train])
     #test_dataset = ConcatDataset([video_dataset_test, timeseries_dataset_test])
@@ -247,30 +259,36 @@ def split_data(class_dict, train_ratio=0.7, batch_size = 32, save = False):
     video_test_dataloader = DataLoader(video_dataset_test, batch_size=batch_size, shuffle=False)
     timeseries_train_dataloader = DataLoader(timeseries_dataset_train, batch_size=batch_size, shuffle=True, collate_fn = custom_collate)
     timeseries_test_dataloader = DataLoader(timeseries_dataset_test, batch_size=batch_size, shuffle=False, collate_fn = custom_collate)
+    label_dataloader_train = DataLoader(label_dataset_train, batch_size = batch_size, shuffle=True)
+    label_dataloader_test = DataLoader(label_dataset_test, batch_size=batch_size, shuffle=True)
     if save:
         torch.save(video_train_dataloader, 'dataloaders/video_train_dataloader.pth')
         torch.save(video_test_dataloader, 'dataloaders/video_test_dataloader.pth')
         torch.save(timeseries_train_dataloader, 'dataloaders/timeseries_train_dataloader.pth')
         torch.save(timeseries_test_dataloader, 'dataloaders/timeseries_test_dataloader.pth')
-    return video_train_dataloader, video_test_dataloader, timeseries_train_dataloader, timeseries_test_dataloader
+        torch.save(label_dataloader_train, 'dataloaders/label_train_dataloader.pth')
+        torch.save(label_dataloader_test, 'dataloaders/label_test_dataloader.pth')
+    return video_train_dataloader, video_test_dataloader, timeseries_train_dataloader, timeseries_test_dataloader, label_dataloader_train, label_dataloader_test
 
 def get_dataloaders(pickle_path, video_path, train_ratio = 0.7, batch_size = 32, save = False, load = False):
     if load:
         video_train_dataloader = torch.load('dataloaders/video_train_dataloader.pth')
         video_test_dataloader = torch.load('dataloaders/video_test_dataloader.pth')
         timeseries_train_dataloader = torch.load('dataloaders/timeseries_train_dataloader.pth')
-        timeseries_test_dataloader = torch.load('dataloaders/timeseries_test_dataloader.pth')        
-        return video_train_dataloader, video_test_dataloader, timeseries_train_dataloader, timeseries_test_dataloader
+        timeseries_test_dataloader = torch.load('dataloaders/timeseries_test_dataloader.pth')
+        label_train = torch.load('dataloaders/label_train_dataloader.pth')
+        label_test = torch.load("dataloaders/label_test_dataloader.pth")
+        return video_train_dataloader, video_test_dataloader, timeseries_train_dataloader, timeseries_test_dataloader, label_train, label_test
     class_dict = load_data(pickle_path, video_path)
     return split_data(class_dict, train_ratio = train_ratio, batch_size = batch_size, save = save)
 
 if __name__ == "__main__":
     start_time = time.time()
     print("Started", flush = True)
-    video_train_loader, video_test_loader, timeseries_train_loader, timeseries_test_loader = get_dataloaders(
+    video_train_loader, video_test_loader, timeseries_train_loader, timeseries_test_loader, l_train, l_test = get_dataloaders(
                                                         '/work5/share/NEDO/nedo-2019/data/processed_rosbags_topickles/fixed_pickles', 
                                                         "/work5/share/NEDO/nedo-2019/data/01_driving_data/movie", 
-                                                        save = True, batch_size=32
+                                                        save = False, batch_size=32
                                                     )
     end_time = time.time() - start_time
     print("Finished, took {} seconds".format(end_time))

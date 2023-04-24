@@ -97,7 +97,6 @@ class TimeseriesVAE(nn.Module):
                 peds_cat2 = input[4][:,:,i]
                 encoded_mpeds.append(self.mpeds_encoder(peds_cont, cat_inp2 = peds_cat2))
             if len(encoded_mpeds) > 0:
-                print(f"len encoded peds {len(encoded_mpeds)}", flush = True)
                 encoded_mpeds = tuple(torch.sum(torch.stack(tensors), dim=0) for tensors in zip(*encoded_mpeds))
                 #kl_divergence += -0.5 * torch.sum(1 + encoded_mpeds[2] - encoded_mpeds[1].pow(2) - encoded_mpeds[2].exp(), dim=1).mean()
                 #decoded_mpeds = [self.mpeds_decoder(encoded_mpeds[0], input[4]) for _ in range(input[4].size(2))]
@@ -119,7 +118,6 @@ class TimeseriesVAE(nn.Module):
                 cars_cat1 = input[6][:,:,i]
                 cars_cat2 = input[7][:,:,5*i:5*i+5]
                 encoded_mcars.append(self.mcars_encoder(cars_cont, cars_cat1, cars_cat2))
-            print(f"len encoded cars {len(encoded_mcars)}")
             if len(encoded_mcars) > 0:
                 encoded_mcars = tuple(torch.sum(torch.stack(tensors), dim=0) for tensors in zip(*encoded_mcars))
                 #kl_divergence += -0.5 * torch.sum(1 + encoded_mcars[2] - encoded_mcars[1].pow(2) - encoded_mcars[2].exp(), dim=1).mean()

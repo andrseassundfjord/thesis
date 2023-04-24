@@ -26,33 +26,32 @@ class VideoEncoder(nn.Module):
         self.hs = hidden_shape
 
         self.model = nn.ModuleList([
-            nn.Conv3d(self.n_channel, self.hs[0] * self.n_channel, kernel_size = 4, stride = 2, padding = 1),
-            nn.BatchNorm3d(self.hs[0] * self.n_channel),
+            nn.Conv3d(self.n_channel, self.hs[0], kernel_size = 4, stride = 2, padding = 1),
+            nn.BatchNorm3d(self.hs[0]),
             nn.LeakyReLU(),
-            nn.Conv3d(self.hs[0] * self.n_channel, self.hs[1] * self.n_channel, kernel_size = 4, stride = 2, padding = 1),
-            nn.BatchNorm3d(self.hs[1] * self.n_channel),
+            nn.Conv3d(self.hs[0], self.hs[1], kernel_size = 4, stride = 2, padding = 1),
+            nn.BatchNorm3d(self.hs[1]),
             nn.LeakyReLU(),
-            nn.Conv3d(self.hs[1] * self.n_channel, self.hs[2] * self.n_channel, kernel_size = 4, stride = 2, padding = 1),
-            nn.BatchNorm3d(self.hs[2] * self.n_channel),
+            nn.Conv3d(self.hs[1], self.hs[2], kernel_size = 4, stride = 2, padding = 1),
+            nn.BatchNorm3d(self.hs[2]),
             nn.LeakyReLU(),
             Flatten(),
             nn.Dropout(dropout),
-            nn.Linear(int(self.hs[2] * self.n_channel * self.width * self.height * self.n_frames / (8 ** 3)), self.hs[3] * self.n_channel),
-            nn.BatchNorm1d(self.hs[3] * self.n_channel),
+            nn.Linear(int(self.hs[2] * self.width * self.height * self.n_frames / (8 ** 3)), self.hs[3]),
+            nn.BatchNorm1d(self.hs[3]),
             nn.LeakyReLU()
         ])
         
-        self.fc = nn.Linear(self.hs[3] * self.n_channel, latent_dim)
+        self.fc = nn.Linear(self.hs[3], latent_dim)
 
         # Weight init
         for m in self.model:
             if isinstance(m, (nn.Conv2d, nn.Conv3d, nn.Linear)):
-                init.kaiming_uniform_(m.weight, mode='fan_in', nonlinearity='leaky_relu')
+                init.kaiming_normal_(m.weight, mode='fan_in', nonlinearity='leaky_relu')
                 if m.bias is not None:
                     init.constant_(m.bias, 0.0)
 
-        init.kaiming_uniform_(self.fc_mu.weight, mode='fan_in', nonlinearity='leaky_relu')
-        init.kaiming_uniform_(self.fc_log_var.weight, mode='fan_in', nonlinearity='leaky_relu')
+        init.kaiming_normal_(self.fc.weight, mode='fan_in', nonlinearity='leaky_relu')
 
     def forward(self, x):
         if torch.any(torch.isnan(x)):
@@ -76,21 +75,21 @@ class VideoDecoder(nn.Module):
         self.hs = hidden_shape
 
         self.model = nn.ModuleList([
-            nn.Linear(latent_dim, self.hs[3] * self.n_channel),
-            nn.BatchNorm1d(self.hs[3] * self.n_channel),
+            nn.Linear(latent_dim, self.hs[3]),
+            nn.BatchNorm1d(self.hs[3]),
             nn.ReLU(),
-            nn.Linear(self.hs[3] * self.n_channel, int(self.hs[2] * self.n_channel * self.width * self.height * self.n_frames / (8 ** 3))),
-            nn.BatchNorm1d(int(self.hs[2] * self.n_channel * self.width * self.height * self.n_frames / (8 ** 3))),
+            nn.Linear(self.hs[3], int(self.hs[2] * self.width * self.height * self.n_frames / (8 ** 3))),
+            nn.BatchNorm1d(int(self.hs[2] * self.width * self.height * self.n_frames / (8 ** 3))),
             nn.ReLU(),
             nn.Dropout(dropout),
-            Reshape((self.hs[2] * self.n_channel, int(self.n_frames / 8), int(self.width / 8), int(self.height / 8))),
-            nn.ConvTranspose3d(self.hs[2] * self.n_channel, self.hs[1] * self.n_channel, kernel_size=4, stride=2, padding=1),
-            nn.BatchNorm3d(self.hs[1] * self.n_channel),
+            Reshape((self.hs[2], int(self.n_frames / 8), int(self.width / 8), int(self.height / 8))),
+            nn.ConvTranspose3d(self.hs[2], self.hs[1], kernel_size=4, stride=2, padding=1),
+            nn.BatchNorm3d(self.hs[1]),
             nn.ReLU(),
-            nn.ConvTranspose3d(self.hs[1] * self.n_channel, self.hs[0] * self.n_channel, kernel_size=4, stride=2, padding=1),
-            nn.BatchNorm3d(self.hs[0] * self.n_channel),
+            nn.ConvTranspose3d(self.hs[1], self.hs[0], kernel_size=4, stride=2, padding=1),
+            nn.BatchNorm3d(self.hs[0]),
             nn.ReLU(),
-            nn.ConvTranspose3d(self.hs[0] * self.n_channel, self.n_channel, kernel_size=4, stride=2, padding=1),
+            nn.ConvTranspose3d(self.hs[0], self.n_channel, kernel_size=4, stride=2, padding=1),
             nn.BatchNorm3d(self.n_channel),
             nn.Sigmoid()
         ])
@@ -131,8 +130,9 @@ class VideoAutoencoder(nn.Module):
 
     def forward(self, video):
         # Encode video
+        
         encoded_video = self.video_encoder(video)
         # Decode
-        decoded_video = self.video_decoder(encoded_video[0])
-        return decoded_video, encoded_video
+        decoded_video = self.video_decoder(encoded_video)
+        return encoded_video, decoded_video
 

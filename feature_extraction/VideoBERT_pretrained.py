@@ -46,7 +46,7 @@ class VideoBERT_pretrained(nn.Module):
         latent_representation = self.fc(encoded_video)  # shape: (batch_size, latent_dim)
 
         # Use the decoder to generate the predicted future frames
-        predicted_frames = self.decoder(latent_representation)  # shape: (batch_size, 3, H, W)
+        predicted_frames = self.decoder(latent_representation)  # shape: (batch_size, 3, num_frames, H, W)
 
         return latent_representation, predicted_frames
 

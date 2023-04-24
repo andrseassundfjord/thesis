@@ -3,7 +3,7 @@
 # Exit on failure
 set -e
 export CUDA_LAUNCH_BLOCKING=1
-set CUDA_LAUNCH_BLOCKING=1
+export 'PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512'
 
 # activate virtual environment
 source ../env/bin/activate

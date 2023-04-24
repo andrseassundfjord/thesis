@@ -1,0 +1,20 @@
+Using device: cuda
+Number of parameters in model:  88837846
+Start training
+Time taken: 979.06 seconds
+Epoch: 9 	 Train Loss: 12481.752206	 Test Loss: 8967.382118
+Time taken: 1917.81 seconds
+Epoch: 19 	 Train Loss: 10111.858601	 Test Loss: 6888.651283
+Time taken: 2860.39 seconds
+Epoch: 29 	 Train Loss: 10806.804783	 Test Loss: 8719.641884
+Time taken: 3810.67 seconds
+Epoch: 39 	 Train Loss: 9386.766075	 Test Loss: 5914.592043
+Time taken: 4746.26 seconds
+Epoch: 49 	 Train Loss: 8915.920460	 Test Loss: 6385.825868
+Time taken: 5666.61 seconds
+Epoch: 59 	 Train Loss: 10009.731058	 Test Loss: 6690.784790
+Time taken: 6575.51 seconds
+Epoch: 69 	 Train Loss: 9763.386221	 Test Loss: 6615.944464
+Finished training
+Time taken: 7030.15 seconds
+Best test loss: 5434.861767 at epoch: 58

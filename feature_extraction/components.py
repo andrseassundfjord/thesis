@@ -29,24 +29,24 @@ class VideoEncoder(nn.Module):
         self.hs = hidden_shape
 
         self.model = nn.ModuleList([
-            nn.Conv3d(self.n_channel, self.hs[0] * self.n_channel, kernel_size = 4, stride = 2, padding = 1),
-            nn.BatchNorm3d(self.hs[0] * self.n_channel),
+            nn.Conv3d(self.n_channel, self.hs[0], kernel_size = 4, stride = 2, padding = 1),
+            nn.BatchNorm3d(self.hs[0]),
             nn.LeakyReLU(),
-            nn.Conv3d(self.hs[0] * self.n_channel, self.hs[1] * self.n_channel, kernel_size = 4, stride = 2, padding = 1),
-            nn.BatchNorm3d(self.hs[1] * self.n_channel),
+            nn.Conv3d(self.hs[0], self.hs[1], kernel_size = 4, stride = 2, padding = 1),
+            nn.BatchNorm3d(self.hs[1]),
             nn.LeakyReLU(),
-            nn.Conv3d(self.hs[1] * self.n_channel, self.hs[2] * self.n_channel, kernel_size = 4, stride = 2, padding = 1),
-            nn.BatchNorm3d(self.hs[2] * self.n_channel),
+            nn.Conv3d(self.hs[1], self.hs[2], kernel_size = 4, stride = 2, padding = 1),
+            nn.BatchNorm3d(self.hs[2]),
             nn.LeakyReLU(),
             Flatten(),
             nn.Dropout(dropout),
-            nn.Linear(int(self.hs[2] * self.n_channel * self.width * self.height * self.n_frames / (8 ** 3)), self.hs[3] * self.n_channel),
-            nn.BatchNorm1d(self.hs[3] * self.n_channel),
+            nn.Linear(int(self.hs[2] * self.width * self.height * self.n_frames / (8 ** 3)), self.hs[3]),
+            nn.BatchNorm1d(self.hs[3]),
             nn.LeakyReLU()
         ])
         
-        self.fc_mu = nn.Linear(self.hs[3] * self.n_channel, latent_dim)
-        self.fc_log_var = nn.Linear(self.hs[3] * self.n_channel, latent_dim)
+        self.fc_mu = nn.Linear(self.hs[3], latent_dim)
+        self.fc_log_var = nn.Linear(self.hs[3], latent_dim)
 
         # Weight init
         for m in self.model:
@@ -90,21 +90,21 @@ class VideoDecoder(nn.Module):
         self.hs = hidden_shape
 
         self.model = nn.ModuleList([
-            nn.Linear(latent_dim, self.hs[3] * self.n_channel),
-            nn.BatchNorm1d(self.hs[3] * self.n_channel),
-            nn.ReLU(),
-            nn.Linear(self.hs[3] * self.n_channel, int(self.hs[2] * self.n_channel * self.width * self.height * self.n_frames / (8 ** 3))),
-            nn.BatchNorm1d(int(self.hs[2] * self.n_channel * self.width * self.height * self.n_frames / (8 ** 3))),
-            nn.ReLU(),
+            nn.Linear(latent_dim, self.hs[3]),
+            nn.BatchNorm1d(self.hs[3]),
+            nn.LeakyReLU(),
+            nn.Linear(self.hs[3], int(self.hs[2] * self.width * self.height * self.n_frames / (8 ** 3))),
+            nn.BatchNorm1d(int(self.hs[2] * self.width * self.height * self.n_frames / (8 ** 3))),
+            nn.LeakyReLU(),
             nn.Dropout(dropout),
-            Reshape((self.hs[2] * self.n_channel, int(self.n_frames / 8), int(self.width / 8), int(self.height / 8))),
-            nn.ConvTranspose3d(self.hs[2] * self.n_channel, self.hs[1] * self.n_channel, kernel_size=4, stride=2, padding=1),
-            nn.BatchNorm3d(self.hs[1] * self.n_channel),
-            nn.ReLU(),
-            nn.ConvTranspose3d(self.hs[1] * self.n_channel, self.hs[0] * self.n_channel, kernel_size=4, stride=2, padding=1),
-            nn.BatchNorm3d(self.hs[0] * self.n_channel),
-            nn.ReLU(),
-            nn.ConvTranspose3d(self.hs[0] * self.n_channel, self.n_channel, kernel_size=4, stride=2, padding=1),
+            Reshape((self.hs[2], int(self.n_frames / 8), int(self.width / 8), int(self.height / 8))),
+            nn.ConvTranspose3d(self.hs[2], self.hs[1], kernel_size=4, stride=2, padding=1),
+            nn.BatchNorm3d(self.hs[1]),
+            nn.LeakyReLU(),
+            nn.ConvTranspose3d(self.hs[1], self.hs[0], kernel_size=4, stride=2, padding=1),
+            nn.BatchNorm3d(self.hs[0]),
+            nn.LeakyReLU(),
+            nn.ConvTranspose3d(self.hs[0], self.n_channel, kernel_size=4, stride=2, padding=1),
             nn.BatchNorm3d(self.n_channel),
             nn.Sigmoid()
         ])
@@ -135,21 +135,26 @@ class TimeseriesEncoder(nn.Module):
         self.latent_dim = latent_dim
         self.num_layers = num_layers
         self.categorical_cols = categorical_cols
-        self.bidirectional = False
+        self.bidirectional = True
         
         if categorical_cols is not None:
             self.embeddings = nn.ModuleList([nn.Embedding(num_embeddings=num_cardinals, embedding_dim=embedding_dim)
                                              for num_cardinals in categorical_cols])
             self.input_dim += embedding_dim * len(self.categorical_cols)
 
-        self.lstm = nn.LSTM(self.input_dim, hidden_dim, num_layers=num_layers, batch_first = True, dropout = dropout, bidirectional = self.bidirectional)
-        #self.gru = nn.GRU(self.input_dim, hidden_dim, num_layers = num_layers, batch_first = True, dropout = dropout, bidirectional = self.bidirectional)
+        #self.lstm = nn.LSTM(self.input_dim, hidden_dim, num_layers=num_layers, batch_first = True, dropout = dropout, bidirectional = self.bidirectional)
+        self.gru = nn.GRU(self.input_dim, hidden_dim, num_layers = num_layers, batch_first = True, dropout = dropout, bidirectional = self.bidirectional)
         self.flatten = Flatten()
-        self.fc1 = nn.Linear(hidden_dim * 200, hidden_dim * 2)
+        bidir = 2 if self.bidirectional else 1
+        self.fc1 = nn.Linear(hidden_dim * 200 * bidir, hidden_dim * 2)
         self.fc_mean = nn.Linear(hidden_dim * 2, latent_dim)
         self.fc_logvar = nn.Linear(hidden_dim * 2, latent_dim)
         # Define batchnorm
         self.bn = nn.BatchNorm1d(200)
+
+        init.kaiming_normal_(self.fc1.weight, mode='fan_in', nonlinearity='leaky_relu')
+        init.kaiming_normal_(self.fc_mean.weight, mode='fan_in')
+        init.kaiming_normal_(self.fc_logvar.weight, mode='fan_in')
 
     def forward(self, x, cat_inp1 = None, cat_inp2 = None):
         """
@@ -157,10 +162,6 @@ class TimeseriesEncoder(nn.Module):
         cat_inp1: categorical variables with 1 and 0 as possible values
         cat_inp2: categorical variables with more than two possible values
         """
-        batch_size = x.size(0)
-        bidir = 2 if self.bidirectional else 1
-        #h0 = torch.zeros(bidir * self.num_layers, batch_size, self.hidden_dim).to(x.device)
-        #c0 = torch.zeros(bidir * self.num_layers, batch_size, self.hidden_dim).to(x.device)
         
         if self.categorical_cols is not None:
             cat_inputs = []
@@ -181,11 +182,11 @@ class TimeseriesEncoder(nn.Module):
                 x = torch.cat([x, cat_inp1, cat_inputs], dim=-1)
             else:
                 x = torch.cat([x, cat_inputs], dim=-1)
-        #lstm_out, _ = self.lstm(x, (h0, c0))
-        lstm_out, _ = self.lstm(x)
+        #lstm_out, _ = self.lstm(x)
+        lstm_out, _ = self.gru(x)
         lstm_out = self.bn(lstm_out)
         lstm_out = self.flatten(lstm_out)
-        z = F.relu(self.fc1(lstm_out))
+        z = nn.LeakyReLU(self.fc1(lstm_out))
         z_mean = self.fc_mean(z)
         z_logvar = self.fc_logvar(z)
         return self.sampling((z_mean, z_logvar)), z_mean, z_logvar
@@ -206,7 +207,7 @@ class TimeseriesDecoder(nn.Module):
         self.num_layers = num_layers
         self.categorical_cols = categorical_cols
         self.embedding_dim = embedding_dim
-        self.bidirectional = False
+        self.bidirectional = True
         
         if self.categorical_cols is not None:
             self.embeddings = nn.ModuleList([nn.Embedding(num_cardinals, self.embedding_dim) for num_cardinals in self.categorical_cols])
@@ -215,15 +216,19 @@ class TimeseriesDecoder(nn.Module):
             self.input_dim = self.latent_dim
         # Define layers
         self.fc1 = nn.Linear(self.input_dim, hidden_dim)
-        self.lstm = nn.LSTM(hidden_dim, hidden_dim, num_layers=num_layers, batch_first=True, dropout = dropout, bidirectional = self.bidirectional)
-        self.fc3 = nn.Linear(hidden_dim, output_shape[1])
+        #self.lstm = nn.LSTM(hidden_dim, hidden_dim, num_layers=num_layers, batch_first=True, dropout = dropout, bidirectional = self.bidirectional)
+        self.gru = nn.GRU(hidden_dim, hidden_dim, num_layers=num_layers, batch_first=True, dropout = dropout, bidirectional = self.bidirectional)
+        bidir = 2 if self.bidirectional else 1
+        self.fc3 = nn.Linear(hidden_dim * bidir, output_shape[1])
         # Define batchnorm
         self.bn = nn.BatchNorm1d(200)
+
+        init.kaiming_normal_(self.fc1.weight, mode='fan_in', nonlinearity='leaky_relu')
+        init.kaiming_normal_(self.fc1.weight, mode='fan_in', nonlinearity='relu')
 
     def forward(self, z, categorical_input=None):
         batch_size = z.size(0)
         seq_len = self.output_shape[0]
-        bidir = 2 if self.bidirectional else 1
         if categorical_input is not None:
             categorical_embeddings = []
             for i, num_cardinals in enumerate(self.categorical_cols):
@@ -241,10 +246,11 @@ class TimeseriesDecoder(nn.Module):
             z = z.repeat(1, seq_len, 1)
             z = torch.cat([z, categorical_embeddings], dim=-1)
         
-        z = F.relu(self.fc1(z))
-        lstm_out, _ = self.lstm(z)
+        z = nn.LeakyReLU(self.fc1(z))
+        #lstm_out, _ = self.lstm(z)
+        lstm_out, _ = self.gru(z)
         lstm_out = self.bn(lstm_out)
-        output = self.fc3(lstm_out)
+        output = nn.ReLU(self.fc3(lstm_out))
         return output
 
 class TimeseriesEncoder2(nn.Module):
