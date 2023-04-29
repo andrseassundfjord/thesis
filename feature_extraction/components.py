@@ -135,7 +135,7 @@ class TimeseriesEncoder(nn.Module):
         self.latent_dim = latent_dim
         self.num_layers = num_layers
         self.categorical_cols = categorical_cols
-        self.bidirectional = True
+        self.bidirectional = False
         
         if categorical_cols is not None:
             self.embeddings = nn.ModuleList([nn.Embedding(num_embeddings=num_cardinals, embedding_dim=embedding_dim)
@@ -152,9 +152,9 @@ class TimeseriesEncoder(nn.Module):
         # Define batchnorm
         self.bn = nn.BatchNorm1d(200)
 
+        self.leaky = nn.LeakyReLU()
+
         init.kaiming_normal_(self.fc1.weight, mode='fan_in', nonlinearity='leaky_relu')
-        init.kaiming_normal_(self.fc_mean.weight, mode='fan_in')
-        init.kaiming_normal_(self.fc_logvar.weight, mode='fan_in')
 
     def forward(self, x, cat_inp1 = None, cat_inp2 = None):
         """
@@ -186,7 +186,7 @@ class TimeseriesEncoder(nn.Module):
         lstm_out, _ = self.gru(x)
         lstm_out = self.bn(lstm_out)
         lstm_out = self.flatten(lstm_out)
-        z = nn.LeakyReLU(self.fc1(lstm_out))
+        z = self.leaky(self.fc1(lstm_out))
         z_mean = self.fc_mean(z)
         z_logvar = self.fc_logvar(z)
         return self.sampling((z_mean, z_logvar)), z_mean, z_logvar
@@ -207,7 +207,7 @@ class TimeseriesDecoder(nn.Module):
         self.num_layers = num_layers
         self.categorical_cols = categorical_cols
         self.embedding_dim = embedding_dim
-        self.bidirectional = True
+        self.bidirectional = False
         
         if self.categorical_cols is not None:
             self.embeddings = nn.ModuleList([nn.Embedding(num_cardinals, self.embedding_dim) for num_cardinals in self.categorical_cols])
@@ -216,6 +216,8 @@ class TimeseriesDecoder(nn.Module):
             self.input_dim = self.latent_dim
         # Define layers
         self.fc1 = nn.Linear(self.input_dim, hidden_dim)
+        self.leaky = nn.LeakyReLU()
+        self.relu = nn.ReLU()
         #self.lstm = nn.LSTM(hidden_dim, hidden_dim, num_layers=num_layers, batch_first=True, dropout = dropout, bidirectional = self.bidirectional)
         self.gru = nn.GRU(hidden_dim, hidden_dim, num_layers=num_layers, batch_first=True, dropout = dropout, bidirectional = self.bidirectional)
         bidir = 2 if self.bidirectional else 1
@@ -224,7 +226,7 @@ class TimeseriesDecoder(nn.Module):
         self.bn = nn.BatchNorm1d(200)
 
         init.kaiming_normal_(self.fc1.weight, mode='fan_in', nonlinearity='leaky_relu')
-        init.kaiming_normal_(self.fc1.weight, mode='fan_in', nonlinearity='relu')
+        init.kaiming_uniform_(self.fc1.weight, mode='fan_in', nonlinearity='relu')
 
     def forward(self, z, categorical_input=None):
         batch_size = z.size(0)
@@ -246,11 +248,11 @@ class TimeseriesDecoder(nn.Module):
             z = z.repeat(1, seq_len, 1)
             z = torch.cat([z, categorical_embeddings], dim=-1)
         
-        z = nn.LeakyReLU(self.fc1(z))
+        z = self.leaky(self.fc1(z))
         #lstm_out, _ = self.lstm(z)
         lstm_out, _ = self.gru(z)
         lstm_out = self.bn(lstm_out)
-        output = nn.ReLU(self.fc3(lstm_out))
+        output = self.relu(self.fc3(lstm_out))
         return output
 
 class TimeseriesEncoder2(nn.Module):

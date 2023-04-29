@@ -13,6 +13,7 @@ import random
 import pandas as pd
 import math
 import time
+import csv
 
 class LabelDataset(Dataset):
     def __init__(self, labels):
@@ -183,6 +184,14 @@ def custom_collate(batch, padding_value=-999):
 
     return stacked_tensors
 
+def search_csv(tag):
+    with open("/work5/share/NEDO/nedo-2019/data/03_risk_level/scene_risk_scores.csv", 'r') as file:
+        reader = csv.reader(file)
+        for row in reader:
+            if tag in row:
+                return row[-1]
+    return None
+
 def load_data(folder_path, video_path):
     class_dict = {}
     for file_path in glob.glob(os.path.join(folder_path, '*.pkl4')):
@@ -195,9 +204,10 @@ def load_data(folder_path, video_path):
             sample_df = series_to_dataframe(sample)
             label = video_name.split(".")[0].split("_")[-1]
             if label not in class_dict:
-                class_dict[label] = [[], []]
+                class_dict[label] = [[], [], []]
             class_dict[label][0].append(sample_df)
             class_dict[label][1].append(video_name)
+            class_dict[label][2].append(search_csv(filename))
         else:
             print(video_name, file_path)
     return class_dict
@@ -225,20 +235,26 @@ def split_data(class_dict, train_ratio=0.7, batch_size = 32, save = False):
     timeseries_list_test = []
     train_labels = []
     test_labels = []
+    train_risk = []
+    test_risk = []
     
     for label in class_dict:
         samples = class_dict[label][0]
         videos = class_dict[label][1]
+        riskScores = class_dict[label][2]
         n_train = int(len(samples) * train_ratio)
-        combined = list(zip(samples, videos))  # Combine samples and videos into tuples
+        combined = list(zip(samples, videos, riskScores))  # Combine samples and videos into tuples
         random.shuffle(combined)  # Shuffle the combined list
-        samples, videos = zip(*combined)  # Unpack the shuffled tuples back into separate lists
+        samples, videos, riskScores = zip(*combined)  # Unpack the shuffled tuples back into separate lists
         # Add video 
         video_list_train += videos[:n_train]
         video_list_test += videos[n_train:]
         # Add timeseries data
         timeseries_list_train += samples[:n_train]
         timeseries_list_test += samples[n_train:]
+        # Add risk scores
+        train_risk += riskScores[:n_train]
+        test_risk += riskScores[n_train:]
         # Add labels
         train_labels += [label] * n_train
         test_labels += [label] * (len(samples) - n_train)
@@ -249,6 +265,8 @@ def split_data(class_dict, train_ratio=0.7, batch_size = 32, save = False):
     timeseries_dataset_test = DataFrameTimeseriesDataset(timeseries_list_test)
     label_dataset_train = LabelDataset(train_labels)
     label_dataset_test = LabelDataset(test_labels)
+    risk_dataset_train = LabelDataset(train_risk)
+    risk_dataset_test = LabelDataset(test_risk)
     # Concat datasets
     #train_dataset = ConcatDataset([video_dataset_train, timeseries_dataset_train])
     #test_dataset = ConcatDataset([video_dataset_test, timeseries_dataset_test])
@@ -260,7 +278,9 @@ def split_data(class_dict, train_ratio=0.7, batch_size = 32, save = False):
     timeseries_train_dataloader = DataLoader(timeseries_dataset_train, batch_size=batch_size, shuffle=True, collate_fn = custom_collate)
     timeseries_test_dataloader = DataLoader(timeseries_dataset_test, batch_size=batch_size, shuffle=False, collate_fn = custom_collate)
     label_dataloader_train = DataLoader(label_dataset_train, batch_size = batch_size, shuffle=True)
-    label_dataloader_test = DataLoader(label_dataset_test, batch_size=batch_size, shuffle=True)
+    label_dataloader_test = DataLoader(label_dataset_test, batch_size=batch_size, shuffle=False)
+    risk_dataloader_train = DataLoader(risk_dataset_train, batch_size=batch_size, shuffle=True)
+    risk_dataloader_test = DataLoader(risk_dataset_test, batch_size=batch_size, shuffle=False)
     if save:
         torch.save(video_train_dataloader, 'dataloaders/video_train_dataloader.pth')
         torch.save(video_test_dataloader, 'dataloaders/video_test_dataloader.pth')
@@ -268,7 +288,9 @@ def split_data(class_dict, train_ratio=0.7, batch_size = 32, save = False):
         torch.save(timeseries_test_dataloader, 'dataloaders/timeseries_test_dataloader.pth')
         torch.save(label_dataloader_train, 'dataloaders/label_train_dataloader.pth')
         torch.save(label_dataloader_test, 'dataloaders/label_test_dataloader.pth')
-    return video_train_dataloader, video_test_dataloader, timeseries_train_dataloader, timeseries_test_dataloader, label_dataloader_train, label_dataloader_test
+        torch.save(risk_dataloader_train, 'dataloaders/risk_train_dataloader.pth')
+        torch.save(risk_dataloader_test, 'dataloaders/risk_test_dataloader.pth')
+    return video_train_dataloader, video_test_dataloader, timeseries_train_dataloader, timeseries_test_dataloader, label_dataloader_train, label_dataloader_test, risk_dataloader_train, risk_dataloader_test
 
 def get_dataloaders(pickle_path, video_path, train_ratio = 0.7, batch_size = 32, save = False, load = False):
     if load:
@@ -278,7 +300,9 @@ def get_dataloaders(pickle_path, video_path, train_ratio = 0.7, batch_size = 32,
         timeseries_test_dataloader = torch.load('dataloaders/timeseries_test_dataloader.pth')
         label_train = torch.load('dataloaders/label_train_dataloader.pth')
         label_test = torch.load("dataloaders/label_test_dataloader.pth")
-        return video_train_dataloader, video_test_dataloader, timeseries_train_dataloader, timeseries_test_dataloader, label_train, label_test
+        risk_train = torch.load("dataloaders/risk_train_dataloader.pth")
+        risk_test = torch.load("dataloaders/risk_test_dataloader.pth")
+        return video_train_dataloader, video_test_dataloader, timeseries_train_dataloader, timeseries_test_dataloader, label_train, label_test, risk_train, risk_test
     class_dict = load_data(pickle_path, video_path)
     return split_data(class_dict, train_ratio = train_ratio, batch_size = batch_size, save = save)
 

@@ -139,11 +139,22 @@ class TimeseriesVAE(nn.Module):
         weighted_sum = torch.zeros_like(zs[0])
         for i, attention_weight in enumerate(attention_weights.split(1, dim=1)):
             weighted_sum += attention_weight * zs[i]
+
+        # Compute attention weights
+        flattened_mus = torch.cat(mus, dim=1)
+        attention_weights_mus = F.softmax(self.attention(flattened_mus), dim=1)
+
+        # Compute weighted mean of means
+        weighted_mu = torch.zeros_like(mus[0])
+        for i, attention_weight in enumerate(attention_weights_mus.split(1, dim=1)):
+            weighted_mu += attention_weight * mus[i]
+
+
         decoded_standard = self.standard_decoder(weighted_sum, input[2])
         decoded_mpeds = [self.mpeds_decoder(weighted_sum, input[4]) for _ in range(input[4].size(2))]
         decoded_mpeds = torch.cat(decoded_mpeds, dim = -1)
         decoded_mcars = [self.mcars_decoder(weighted_sum, input[7]) for _ in range(input[6].size(2))]
         decoded_mcars = torch.cat(decoded_mcars, dim = -1)
-        return (decoded_standard, decoded_mpeds, decoded_mcars), kl_divergence
+        return (decoded_standard, decoded_mpeds, decoded_mcars), kl_divergence, weighted_sum, weighted_mu
 
 

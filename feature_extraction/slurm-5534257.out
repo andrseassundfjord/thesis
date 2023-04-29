@@ -1,0 +1,7 @@
+Start classification fine-tuning
+Epoch: 1 	 Train Loss: 0.082510	 Test Loss: 0.084262
+Epoch: 3 	 Train Loss: 0.082458	 Test Loss: 0.084234
+Epoch: 5 	 Train Loss: 0.082425	 Test Loss: 0.084215
+Epoch: 7 	 Train Loss: 0.082412	 Test Loss: 0.084190
+Epoch: 9 	 Train Loss: 0.082385	 Test Loss: 0.084190
+Epoch: 11 	 Train Loss: 0.082385	 Test Loss: 0.084186

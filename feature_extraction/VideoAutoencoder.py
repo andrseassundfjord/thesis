@@ -134,5 +134,5 @@ class VideoAutoencoder(nn.Module):
         encoded_video = self.video_encoder(video)
         # Decode
         decoded_video = self.video_decoder(encoded_video)
-        return encoded_video, decoded_video
+        return decoded_video, encoded_video
 

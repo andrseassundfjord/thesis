@@ -1,0 +1,41 @@
+Using device: cuda
+Model: TimeseriesVAE
+Number of parameters in model:  86616534
+torch.cuda.memory_allocated: 0.322701GB
+torch.cuda.memory_reserved: 0.341797GB
+torch.cuda.max_memory_reserved: 0.341797GB
+Start training
+Time taken: 950.98 seconds
+Epoch: 9 	 Train Loss: 12555.991159	 Test Loss: 9272.597010
+Time taken: 1892.27 seconds
+Epoch: 19 	 Train Loss: 11118.801312	 Test Loss: 7312.206742
+Time taken: 2823.42 seconds
+Epoch: 29 	 Train Loss: 10396.344816	 Test Loss: 6232.074325
+Time taken: 3750.95 seconds
+Epoch: 39 	 Train Loss: 9760.446940	 Test Loss: 6787.454948
+Time taken: 4660.43 seconds
+Epoch: 49 	 Train Loss: 10190.772097	 Test Loss: 6281.608034
+Time taken: 5561.10 seconds
+Epoch: 59 	 Train Loss: 10377.753746	 Test Loss: 5869.211526
+Time taken: 6464.01 seconds
+Epoch: 69 	 Train Loss: 9805.710800	 Test Loss: 6399.890693
+Time taken: 7358.63 seconds
+Epoch: 79 	 Train Loss: 10445.531262	 Test Loss: 6586.434375
+Time taken: 8255.47 seconds
+Epoch: 89 	 Train Loss: 9706.696037	 Test Loss: 7813.494035
+Time taken: 9162.98 seconds
+Epoch: 99 	 Train Loss: 10321.692270	 Test Loss: 7547.190929
+Time taken: 10074.91 seconds
+Epoch: 109 	 Train Loss: 10975.661290	 Test Loss: 7284.287958
+Time taken: 10983.01 seconds
+Epoch: 119 	 Train Loss: 9920.360449	 Test Loss: 5270.170587
+Time taken: 11908.91 seconds
+Epoch: 129 	 Train Loss: 9060.060506	 Test Loss: 6319.168846
+Time taken: 12822.39 seconds
+Epoch: 139 	 Train Loss: 10284.073359	 Test Loss: 6560.106009
+Time taken: 13728.17 seconds
+Epoch: 149 	 Train Loss: 10042.643759	 Test Loss: 6489.239308
+Finished training
+Time taken: 13728.17 seconds
+Best test loss: 4970.737297 at epoch: 43
+Timeseries loss: 0.0, Video loss: 0.0, at epoch: 43

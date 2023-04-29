@@ -1,5 +1,6 @@
 import torch
 from VideoVAE import VideoVAE
+from VideoAutoencoder import VideoAutoencoder
 import cv2
 import random
 import numpy as np
@@ -36,21 +37,26 @@ def get_video():
     video = video.unsqueeze(0)
     return video, filename
 
-def save_video():
+def save_video(model_type):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # Get arguments from file
     # Define the model architecture
-    model = VideoVAE(input_dims= [(64, 128, 128, 3), (200, 352)], latent_dim=612, hidden_layers = [[32, 64, 128, 256], [], []], dropout= 0.2).to(device)
+    model = model_type(input_dims= [(64, 128, 128, 3), (200, 352)], latent_dim=256, 
+                    hidden_layers = [[128, 256, 512, 512], 256, 3], dropout= 0.2).to(device)
 
+    model_name = model.__class__.__name__    
     # Load the model state
-    model.load_state_dict(torch.load('models/videoVAE_state.pth'))
+    model.load_state_dict(torch.load(f'models/{model_name}_state.pth'))
 
     # Set the model to evaluation mode
     model.eval()
 
     video, filename = get_video()
     video = video.to(device)
-    decoded, kl, encoded = model(video)
+    if "VAE" in model_name:
+        decoded, kl, encoded = model(video)
+    else: 
+        decoded, encoded = model(video)
 
     filename = filename.split(".")[0]
 
@@ -58,7 +64,7 @@ def save_video():
 
     # Save video as mp4 file using OpenCV
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter('results/videos/{}_original.mp4'.format(filename), fourcc, 30, (video_shape[4], video_shape[3]), isColor=True)
+    out = cv2.VideoWriter('results/videos/{}_{}_original.mp4'.format(model_name, filename), fourcc, 30, (video_shape[4], video_shape[3]), isColor=True)
     video = video.squeeze(0)
     video = video * 255.0
     video = video.permute(1, 2, 3, 0).detach().cpu().numpy()
@@ -70,7 +76,7 @@ def save_video():
     out.release()
     # Save decoded as mp4 file
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter('results/videos/{}_reconstructed.mp4'.format(filename), fourcc, 30, (video_shape[4], video_shape[3]), isColor=True)
+    out = cv2.VideoWriter('results/videos/{}_{}_reconstructed.mp4'.format(model_name, filename), fourcc, 30, (video_shape[4], video_shape[3]), isColor=True)
     decoded = decoded.squeeze(0)
     decoded = decoded * 255.0
     decoded = decoded.permute(1, 2, 3, 0).detach().cpu().numpy()
@@ -84,4 +90,4 @@ def save_video():
     print("Finished")
 
 if __name__ == "__main__":
-    save_video()
+    save_video(VideoAutoencoder)

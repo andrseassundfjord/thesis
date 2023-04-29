@@ -172,8 +172,17 @@ class MVAE(nn.Module):
         for i, attention_weight in enumerate(attention_weights.split(1, dim=1)):
             weighted_sum += attention_weight * zs[i]
 
+        # Compute attention weights
+        flattened_mus = torch.cat(mus, dim=1)
+        attention_weights_mus = F.softmax(self.attention(flattened_mus), dim=1)
+
+        # Compute weighted mean of means
+        weighted_mu = torch.zeros_like(mus[0])
+        for i, attention_weight in enumerate(attention_weights_mus.split(1, dim=1)):
+            weighted_mu += attention_weight * mus[i]
+
         # Decode latent representation
         decoded_video = self.decodeVideo(weighted_sum)
         decoded_timeseries = self.decodeTimeseries(weighted_sum, modalities[1])
-        return decoded_video, decoded_timeseries, kl_divergence, weighted_sum
+        return decoded_video, decoded_timeseries, kl_divergence, weighted_sum, weighted_mu
 

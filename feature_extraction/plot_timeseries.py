@@ -11,7 +11,7 @@ from TimeseriesVAE import TimeseriesVAE
 
 
 def get_timeseries():
-    video_train_loader, video_test_loader, timeseries_train_loader, timeseries_test_loader = get_dataloaders(
+    video_train_loader, video_test_loader, timeseries_train_loader, timeseries_test_loader, label_train, label_test = get_dataloaders(
                                                     '/work5/share/NEDO/nedo-2019/data/processed_rosbags_topickles/fixed_pickles', 
                                                     "/work5/share/NEDO/nedo-2019/data/01_driving_data/movie", 
                                                     train_ratio = 0.7,

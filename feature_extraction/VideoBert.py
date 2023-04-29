@@ -91,7 +91,7 @@ class VideoBERT(nn.Module):
         latent_representation = self.fc(encoded_video)  # shape: (batch_size, latent_dim)
         # Use the decoder to generate the predicted future frames
         predicted_frames = self.decoder(latent_representation, encoded_features)  # shape: (batch_size, 3, num_frames, H, W)
-        return latent_representation, predicted_frames
+        return predicted_frames, latent_representation
 
 class VideoBERTDecoder(nn.Module):
     def __init__(self, transformer_d_model, latent_dim, num_predicted_frames, cnn_filters, kernel_size, stride, padding, input_size, dropout):
