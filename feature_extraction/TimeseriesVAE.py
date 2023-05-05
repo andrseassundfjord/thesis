@@ -10,6 +10,7 @@ class TimeseriesVAE(nn.Module):
     def __init__(self, input_dims, latent_dim, hidden_layers, dropout, embedding_dim = 8, cat_cols = None):
         super(TimeseriesVAE, self).__init__()
 
+        seq_len = input_dims[1][0]
         self.hidden_dim = hidden_layers[1]
         self.num_hidden_layers = hidden_layers[2]
         self.latent_dim = latent_dim
@@ -22,13 +23,14 @@ class TimeseriesVAE(nn.Module):
             num_layers = self.num_hidden_layers,
             categorical_cols = [11, 64, 11, 7, 7, 7, 3, 3, 6, 4, 4, 7], # From features_used.txt
             embedding_dim = embedding_dim,
-            dropout=dropout
+            dropout=dropout,
+            seq_len = seq_len
         )
         # Decoder
         self.standard_decoder = TimeseriesDecoder(
             latent_dim = latent_dim, 
             hidden_dim = self.hidden_dim, 
-            output_shape = (200, 47), # cont_shape + cat1_shape + cat2_shape
+            output_shape = (seq_len, 47), # cont_shape + cat1_shape + cat2_shape
             num_layers = self.num_hidden_layers,
             categorical_cols = [11, 64, 11, 7, 7, 7, 3, 3, 6, 4, 4, 7],
             embedding_dim = embedding_dim,
@@ -42,13 +44,14 @@ class TimeseriesVAE(nn.Module):
             num_layers = self.num_hidden_layers,
             categorical_cols = [5, 5, 6, 6, 4], # From features_used.txt
             embedding_dim = embedding_dim,
-            dropout=dropout
+            dropout=dropout,
+            seq_len = seq_len
         )
         # Mobileye car decoder
         self.mcars_decoder = TimeseriesDecoder(
             latent_dim = latent_dim, 
             hidden_dim = self.hidden_dim, 
-            output_shape = (200, 15), # cont_shape + cat1_shape + cat2_shape
+            output_shape = (seq_len, 15), # cont_shape + cat1_shape + cat2_shape
             num_layers = self.num_hidden_layers,
             categorical_cols = [5, 5, 6, 6, 4],
             embedding_dim = embedding_dim,
@@ -62,13 +65,14 @@ class TimeseriesVAE(nn.Module):
             num_layers = self.num_hidden_layers,
             categorical_cols = [3], # From features_used.txt
             embedding_dim = embedding_dim,
-            dropout=dropout
+            dropout=dropout,
+            seq_len = seq_len
         )
         # Mobileye pedestrians decoder
         self.mpeds_decoder = TimeseriesDecoder(
             latent_dim = latent_dim, 
             hidden_dim = self.hidden_dim, 
-            output_shape = (200, 5), # cont_shape + cat1_shape + cat2_shape
+            output_shape = (seq_len, 5), # cont_shape + cat1_shape + cat2_shape
             num_layers = self.num_hidden_layers,
             categorical_cols = [3],
             embedding_dim = embedding_dim,

@@ -14,19 +14,19 @@ from VideoAutoencoder import VideoAutoencoder
 from VideoBert import VideoBERT
 from VideoBERT_pretrained import VideoBERT_pretrained
 import math
-from sklearn.metrics import confusion_matrix, f1_score
+from sklearn.metrics import mean_absolute_percentage_error
 
 class SimpleModel(nn.Module):
-    def __init__(self, input_dim, hidden_dim, num_classes):
+    def __init__(self, input_dim, hidden_dim):
         super(SimpleModel, self).__init__()
         self.fc1 = nn.Linear(input_dim, hidden_dim)
-        self.fc2 = nn.Linear(hidden_dim, num_classes)  # num_classes is the number of classes in your classification task
+        self.fc2 = nn.Linear(hidden_dim, 1)  # num_classes is the number of classes in your classification task
         
     def forward(self, x):
         x = self.fc1(x)
         x = nn.functional.leaky_relu(x)
         x = self.fc2(x)
-        x = nn.functional.softmax(x, dim=1)
+        x = x.view(-1)
         return x
 
 def prep_timeseries(timeseries):
@@ -60,10 +60,10 @@ def train_test(model, epochs = 100, lr = 0.001):
     for param in pretrained_model.parameters():
         param.requires_grad = False
 
-    simple_model = SimpleModel(256, 128, 14).to(device)
+    simple_model = SimpleModel(256, 128).to(device)
 
     # Define loss function
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.MSELoss()
 
     # Define optimizer
     optimizer = optim.Adam(simple_model.parameters(), lr=lr)
@@ -87,9 +87,9 @@ def train_test(model, epochs = 100, lr = 0.001):
         pretrained_model.eval()
         simple_model.train()
         train_loss = 0
-        for video, timeseries, label in zip(video_train_loader, timeseries_train_loader, label_train):
+        for video, timeseries, riskScore in zip(video_train_loader, timeseries_train_loader, risk_train):
             optimizer.zero_grad()
-            label = torch.tensor([int(l)-1 for l in label]).to(device)
+            riskScore = torch.tensor([float(r) for r in riskScore]).to(device)
             if "Video" in model_name:
                 video = video.to(device)
                 if "VAE" in model_name:
@@ -98,7 +98,7 @@ def train_test(model, epochs = 100, lr = 0.001):
                 else: 
                     recon_video, latent_representation = pretrained_model(video)
                     latent = latent_representation
-            elif "MVAE" in model_name:
+            elif "M" in model_name:
                 video = video.to(device)
                 timeseries = [t.to(device) for t in timeseries]
                 timeseries = prep_timeseries(timeseries)
@@ -111,7 +111,7 @@ def train_test(model, epochs = 100, lr = 0.001):
                 latent = mus
             
             output = simple_model(latent)
-            loss = criterion(output, label)
+            loss = criterion(output, riskScore)
             
             train_loss += loss.item()
             loss.backward()
@@ -124,8 +124,8 @@ def train_test(model, epochs = 100, lr = 0.001):
         simple_model.eval()
         test_loss = 0
         with torch.no_grad():
-            for video, timeseries, label in zip(video_test_loader, timeseries_test_loader, label_test):
-                label = torch.tensor([int(l)-1 for l in label]).to(device)
+            for video, timeseries, riskScore in zip(video_test_loader, timeseries_test_loader, risk_test):
+                riskScore = torch.tensor([float(r) for r in riskScore]).to(device)
                 if "Video" in model_name:
                     video = video.to(device)
                     if "VAE" in model_name:
@@ -134,7 +134,7 @@ def train_test(model, epochs = 100, lr = 0.001):
                     else: 
                         recon_video, latent_representation = pretrained_model(video)
                         latent = latent_representation
-                elif "MVAE" in model_name:
+                elif "M" in model_name:
                     video = video.to(device)
                     timeseries = [t.to(device) for t in timeseries]
                     timeseries = prep_timeseries(timeseries)
@@ -147,7 +147,7 @@ def train_test(model, epochs = 100, lr = 0.001):
                     latent = mus
                 
                 output = simple_model(latent)
-                loss = criterion(output, label)
+                loss = criterion(output, riskScore)
                 test_loss += loss.item()
         # lr schedule step
         #scheduler.step(test_loss) # For plateau
@@ -157,13 +157,13 @@ def train_test(model, epochs = 100, lr = 0.001):
         if test_loss < best_val_loss:
             best_val_loss = test_loss
             best_val_loss_epoch = epoch
-            torch.save(simple_model.state_dict(), f'models/{model_name}_simple_state.pth')
+            torch.save(simple_model.state_dict(), f'models/{model_name}_risk_state.pth')
 
         # Print loss
         if ( epoch + 1 ) % 2 == 0:
             print('Epoch: {} \t Train Loss: {:.6f}\t Test Loss: {:.6f}'.format(epoch, train_loss, test_loss), flush = True)
 
-    print("Finished training")
+    print(f"Finished training {model_name} for risk score prediction")
     print(f"Best test loss: {best_val_loss:.6f} at epoch: {best_val_loss_epoch}")
 
     evaluate(pretrained_model, model_name)
@@ -172,8 +172,8 @@ def evaluate(pretrained_model, model_name):
     print("Start evaluation", flush = True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # load simple model
-    simple_model = SimpleModel(256, 128, 14).to(device)
-    simple_model.load_state_dict(torch.load(f'models/{model_name}_simple_state.pth'))
+    simple_model = SimpleModel(256, 128).to(device)
+    simple_model.load_state_dict(torch.load(f'models/{model_name}_risk_state.pth'))
     # Load dataloaders
     video_train_loader, video_test_loader, timeseries_train_loader, timeseries_test_loader, label_train, label_test, risk_train, risk_test = get_dataloaders(
                                                 '/work5/share/NEDO/nedo-2019/data/processed_rosbags_topickles/fixed_pickles', 
@@ -185,12 +185,12 @@ def evaluate(pretrained_model, model_name):
                                             )
 
     y_preds = []
-    labels = []
+    riskScores = []
 
     pretrained_model.eval()
     simple_model.eval()
     with torch.no_grad():
-        for video, timeseries, label in zip(video_test_loader, timeseries_test_loader, label_test):
+        for video, timeseries, riskScore in zip(video_test_loader, timeseries_test_loader, risk_test):
             if "Video" in model_name:
                 video = video.to(device)
                 if "VAE" in model_name:
@@ -199,7 +199,7 @@ def evaluate(pretrained_model, model_name):
                 else: 
                     recon_video, latent_representation = pretrained_model(video)
                     latent = latent_representation
-            elif "MVAE" in model_name:
+            elif "M" in model_name:
                 video = video.to(device)
                 timeseries = [t.to(device) for t in timeseries]
                 timeseries = prep_timeseries(timeseries)
@@ -212,29 +212,22 @@ def evaluate(pretrained_model, model_name):
                 latent = mus
             
             output = simple_model(latent)
-            y_pred = torch.argmax(output, dim = 1)
-            y_pred = torch.add(y_pred, 1)
 
-            y_preds.append(y_pred.to("cpu"))
-            label = torch.tensor([int(l) for l in label])
-            labels.append(label)
+            y_preds.append(output.to("cpu"))
+            riskScore = torch.tensor([float(r) for r in riskScore])
+            riskScores.append(riskScore)
 
     y_preds = torch.cat(y_preds, dim = 0)
-    labels = torch.cat(labels, dim = 0)
+    riskScores = torch.cat(riskScores, dim = 0)
     
-    conf_matrix = confusion_matrix(labels, y_preds)
-    f1 = f1_score(labels, y_preds, average="weighted")
+    mape = mean_absolute_percentage_error(y_true=riskScores, y_pred=y_preds)
 
     print(f"\nEvaluation of fine-tuned {model_name} model\n")
-
-    print("Confusion matrix")
-    for idx, line in enumerate(conf_matrix):
-        print(f"{idx + 1} | {line}")
     
-    print(f"F1 Score: {f1}")
+    print(f"MAPE Score: {mape}")
 
 if __name__ == "__main__":
     torch.manual_seed(42)
     np.random.seed(42)
-    print("Start classification fine-tuning")
-    train_test(TimeseriesVAE, epochs=20)
+    print("Start risk score fine-tuning")
+    train_test(MVAE, epochs=20)

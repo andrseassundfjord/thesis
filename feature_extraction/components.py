@@ -128,7 +128,7 @@ class VideoDecoder(nn.Module):
 # Based on https://github.com/cerlymarco/MEDIUM_NoteBook/blob/master/VAE_TimeSeries/VAE_TimeSeries.ipynb
 
 class TimeseriesEncoder(nn.Module):
-    def __init__(self, input_dim, hidden_dim, latent_dim, dropout, num_layers=1, categorical_cols=None, embedding_dim = 16):
+    def __init__(self, input_dim, hidden_dim, latent_dim, dropout, num_layers=1, categorical_cols=None, embedding_dim = 16, seq_len = 200):
         super(TimeseriesEncoder, self).__init__()
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
@@ -146,11 +146,11 @@ class TimeseriesEncoder(nn.Module):
         self.gru = nn.GRU(self.input_dim, hidden_dim, num_layers = num_layers, batch_first = True, dropout = dropout, bidirectional = self.bidirectional)
         self.flatten = Flatten()
         bidir = 2 if self.bidirectional else 1
-        self.fc1 = nn.Linear(hidden_dim * 200 * bidir, hidden_dim * 2)
+        self.fc1 = nn.Linear(hidden_dim * seq_len * bidir, hidden_dim * 2)
         self.fc_mean = nn.Linear(hidden_dim * 2, latent_dim)
         self.fc_logvar = nn.Linear(hidden_dim * 2, latent_dim)
         # Define batchnorm
-        self.bn = nn.BatchNorm1d(200)
+        self.bn = nn.BatchNorm1d(seq_len)
 
         self.leaky = nn.LeakyReLU()
 
@@ -162,7 +162,10 @@ class TimeseriesEncoder(nn.Module):
         cat_inp1: categorical variables with 1 and 0 as possible values
         cat_inp2: categorical variables with more than two possible values
         """
-        
+        if self.input_dim > x.size(1):
+            diff = self.input_dim - x.size(1)
+            padding = torch.zeros((x.size(0), diff))
+            x = torch.cat((x, padding), dim = 1)   
         if self.categorical_cols is not None:
             cat_inputs = []
             for i, num_cardinals in enumerate(self.categorical_cols):
@@ -208,6 +211,7 @@ class TimeseriesDecoder(nn.Module):
         self.categorical_cols = categorical_cols
         self.embedding_dim = embedding_dim
         self.bidirectional = False
+        seq_len = output_shape[0]
         
         if self.categorical_cols is not None:
             self.embeddings = nn.ModuleList([nn.Embedding(num_cardinals, self.embedding_dim) for num_cardinals in self.categorical_cols])
@@ -221,9 +225,9 @@ class TimeseriesDecoder(nn.Module):
         #self.lstm = nn.LSTM(hidden_dim, hidden_dim, num_layers=num_layers, batch_first=True, dropout = dropout, bidirectional = self.bidirectional)
         self.gru = nn.GRU(hidden_dim, hidden_dim, num_layers=num_layers, batch_first=True, dropout = dropout, bidirectional = self.bidirectional)
         bidir = 2 if self.bidirectional else 1
-        self.fc3 = nn.Linear(hidden_dim * bidir, output_shape[1])
+        self.fc3 = nn.Linear(hidden_dim * bidir, seq_len)
         # Define batchnorm
-        self.bn = nn.BatchNorm1d(200)
+        self.bn = nn.BatchNorm1d(seq_len)
 
         init.kaiming_normal_(self.fc1.weight, mode='fan_in', nonlinearity='leaky_relu')
         init.kaiming_uniform_(self.fc1.weight, mode='fan_in', nonlinearity='relu')
@@ -256,7 +260,7 @@ class TimeseriesDecoder(nn.Module):
         return output
 
 class TimeseriesEncoder2(nn.Module):
-    def __init__(self, hidden_dim, latent_dim, dropout, num_layers=1, categorical=None, embedding_dim = 4, bidirectional = False):
+    def __init__(self, hidden_dim, latent_dim, dropout, num_layers=1, categorical=None, embedding_dim = 8, bidirectional = False):
         super(TimeseriesEncoder2, self).__init__()
         self.input_dim = 1
         self.hidden_dim = hidden_dim

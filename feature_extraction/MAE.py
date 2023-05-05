@@ -15,13 +15,14 @@ class MAE(nn.Module):
         self.hidden_dim = hidden_layers[1]
         self.num_hidden_layers = hidden_layers[2]
         embedding_dim = 8
+        seq_len = input_dims[1][0]
         # Video
         self.video_encoder = VideoEncoder(latent_dim = latent_dim, 
                                             input_shape = self.video_input_shape, 
                                             hidden_shape = self.hidden_shape,
                                             dropout = dropout
                                         )
-        self.video_decoder = VideoDecoder(latent_dim = latent_dim, 
+        self.video_decoder = VideoDecoder(latent_dim = latent_dim * 2, 
                                             input_shape = self.video_input_shape, 
                                             hidden_shape = self.hidden_shape,
                                             dropout = dropout
@@ -34,13 +35,14 @@ class MAE(nn.Module):
             num_layers = self.num_hidden_layers,
             categorical_cols = [11, 64, 11, 7, 7, 7, 3, 3, 6, 4, 4, 7], # From features_used.txt
             embedding_dim = embedding_dim,
-            dropout=dropout
+            dropout=dropout,
+            seq_len=seq_len
         )
         # Decoder
         self.standard_decoder = TimeseriesDecoder(
-            latent_dim = latent_dim, 
+            latent_dim = latent_dim * 2, 
             hidden_dim = self.hidden_dim, 
-            output_shape = (200, 47), # cont_shape + cat1_shape + cat2_shape
+            output_shape = (seq_len, 47), # cont_shape + cat1_shape + cat2_shape
             num_layers = self.num_hidden_layers,
             categorical_cols = [11, 64, 11, 7, 7, 7, 3, 3, 6, 4, 4, 7],
             embedding_dim = embedding_dim,
@@ -54,13 +56,14 @@ class MAE(nn.Module):
             num_layers = self.num_hidden_layers,
             categorical_cols = [5, 5, 6, 6, 4], # From features_used.txt
             embedding_dim = embedding_dim,
-            dropout=dropout
+            dropout=dropout,
+            seq_len=seq_len
         )
         # Mobileye car decoder
         self.mcars_decoder = TimeseriesDecoder(
-            latent_dim = latent_dim, 
+            latent_dim = latent_dim * 2, 
             hidden_dim = self.hidden_dim, 
-            output_shape = (200, 15), # cont_shape + cat1_shape + cat2_shape
+            output_shape = (seq_len, 15), # cont_shape + cat1_shape + cat2_shape
             num_layers = self.num_hidden_layers,
             categorical_cols = [5, 5, 6, 6, 4],
             embedding_dim = embedding_dim,
@@ -74,13 +77,14 @@ class MAE(nn.Module):
             num_layers = self.num_hidden_layers,
             categorical_cols = [3], # From features_used.txt
             embedding_dim = embedding_dim,
-            dropout=dropout
+            dropout=dropout,
+            seq_len=seq_len
         )
         # Mobileye pedestrians decoder
         self.mpeds_decoder = TimeseriesDecoder(
-            latent_dim = latent_dim, 
+            latent_dim = latent_dim * 2, 
             hidden_dim = self.hidden_dim, 
-            output_shape = (200, 5), # cont_shape + cat1_shape + cat2_shape
+            output_shape = (seq_len, 5), # cont_shape + cat1_shape + cat2_shape
             num_layers = self.num_hidden_layers,
             categorical_cols = [3],
             embedding_dim = embedding_dim,
@@ -88,13 +92,13 @@ class MAE(nn.Module):
         )
         # Multi-modal attention module
         self.attention = nn.Sequential(
-            nn.Linear(latent_dim * 4, latent_dim),
+            nn.Linear(latent_dim * 3, latent_dim),
             nn.Dropout(dropout),
             nn.LeakyReLU(),
             nn.Linear(latent_dim, latent_dim),
             nn.Dropout(dropout),
             nn.LeakyReLU(),
-            nn.Linear(latent_dim, 4)
+            nn.Linear(latent_dim, 3)
         )
         for m in self.attention:
             if isinstance(m, (nn.Linear)):
@@ -141,7 +145,7 @@ class MAE(nn.Module):
         return [encoded_standard, encoded_mpeds, encoded_standard]
 
     def encodeVideo(self, input):
-        return [self.video_encoder(input)]
+        return self.video_encoder(input)
     
     def decodeTimeseries(self, weighted_sum, input):
         decoded_standard = self.standard_decoder(weighted_sum, input[2])
@@ -164,27 +168,28 @@ class MAE(nn.Module):
         kl_divergence = -0.5 * torch.sum(1 + torch.stack(logvars) - torch.stack(mus).pow(2) - torch.stack(logvars).exp(), dim=1).mean()
         
         # Compute attention weights
-        combined = tuple(list(zs) + encoded_video)
-        flattened_modalities = torch.cat(combined, dim=1)
+        flattened_modalities = torch.cat(zs, dim=1)
         attention_weights = F.softmax(self.attention(flattened_modalities), dim=1)
         
         # Compute weighted sum of modalities
-        weighted_sum = torch.zeros_like(combined[0])
+        weighted_sum = torch.zeros_like(zs[0])
         for i, attention_weight in enumerate(attention_weights.split(1, dim=1)):
-            weighted_sum += attention_weight * combined[i]
+            weighted_sum += attention_weight * zs[i]
 
         # Compute attention weights
-        combined_mu = tuple(list(mus) + encoded_video)
-        flattened_mus = torch.cat(combined_mu, dim=1)
+        flattened_mus = torch.cat(mus, dim=1)
         attention_weights_mus = F.softmax(self.attention(flattened_mus), dim=1)
 
         # Compute weighted mean of means
-        weighted_mu = torch.zeros_like(combined_mu[0])
+        weighted_mu = torch.zeros_like(mus[0])
         for i, attention_weight in enumerate(attention_weights_mus.split(1, dim=1)):
-            weighted_mu += attention_weight * combined_mu[i]
+            weighted_mu += attention_weight * mus[i]
+
+        cat_representation = torch.cat((weighted_sum, encoded_video), dim = 1)
+        cat_mu = torch.cat((weighted_mu, encoded_video), dim = 1)
 
         # Decode latent representation
-        decoded_video = self.decodeVideo(weighted_sum)
-        decoded_timeseries = self.decodeTimeseries(weighted_sum, modalities[1])
-        return decoded_video, decoded_timeseries, kl_divergence, weighted_sum, weighted_mu
+        decoded_video = self.decodeVideo(cat_representation)
+        decoded_timeseries = self.decodeTimeseries(cat_representation, modalities[1])
+        return decoded_video, decoded_timeseries, kl_divergence, cat_representation, cat_mu
 

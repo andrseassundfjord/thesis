@@ -11,6 +11,7 @@ from load_dataset import get_dataloaders, VideoDataset, DataFrameTimeseriesDatas
 import torch.nn.functional as F
 # Import models
 from MVAE import MVAE
+from MAE import MAE
 from TimeseriesVAE import TimeseriesVAE
 from VideoVAE import VideoVAE
 from VideoAutoencoder import VideoAutoencoder
@@ -144,7 +145,7 @@ def get_latent(model):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # Get arguments from file
     # Define the model architecture
-    model = model(input_dims= [(64, 128, 128, 3), (200, 352)], latent_dim=256, 
+    model = model(input_dims= [(64, 128, 128, 3), (200, 352)], latent_dim=32, 
                     hidden_layers = [[128, 256, 512, 512], 256, 3], dropout= 0.2).to(device)
 
     model_name = model.__class__.__name__
@@ -176,7 +177,7 @@ def get_latent(model):
                 else: 
                     recon_video, latent_representation = model(video)
                     latent = latent_representation.to("cpu")
-            elif "MVAE" in model_name:
+            elif "M" in model_name:
                 video = video.to(device)
                 timeseries = [t.to(device) for t in timeseries]
                 timeseries = prep_timeseries(timeseries)
@@ -211,4 +212,4 @@ if __name__ == "__main__":
     print("Run Cluster")
     torch.manual_seed(42)
     np.random.seed(42)
-    run(MVAE)
+    run(VideoAutoencoder)

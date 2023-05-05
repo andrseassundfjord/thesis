@@ -41,7 +41,7 @@ def save_video(model_type):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # Get arguments from file
     # Define the model architecture
-    model = model_type(input_dims= [(64, 128, 128, 3), (200, 352)], latent_dim=256, 
+    model = model_type(input_dims= [(64, 128, 128, 3), (200, 352)], latent_dim=32, 
                     hidden_layers = [[128, 256, 512, 512], 256, 3], dropout= 0.2).to(device)
 
     model_name = model.__class__.__name__    

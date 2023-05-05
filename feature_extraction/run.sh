@@ -9,10 +9,12 @@ export 'PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512'
 source ../env/bin/activate
 
 #python test.py
-#python run_MVAE.py
+python run_MVAE.py
+#python run_MVAE_augmented.py
 #python classification.py
 #python clustering.py
-python save_video.py
+#python save_video.py
+#python risk_prediction.py
 #python load_dataset.py
 
 unset CUDA_LAUNCH_BLOCKING

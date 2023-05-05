@@ -1,11 +1,12 @@
 import numpy as np
-# Labeled cluster metrics
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
+import torch.nn.init as init
 import torch.optim as optim
 from load_dataset import get_dataloaders, VideoDataset, DataFrameTimeseriesDataset, LabelDataset
 import torch.nn.functional as F
+from torch.optim.lr_scheduler import CosineAnnealingLR, ReduceLROnPlateau, StepLR
 # Import models
 from MVAE import MVAE
 from TimeseriesVAE import TimeseriesVAE
@@ -13,20 +14,37 @@ from VideoVAE import VideoVAE
 from VideoAutoencoder import VideoAutoencoder
 from VideoBert import VideoBERT
 from VideoBERT_pretrained import VideoBERT_pretrained
+from MAE import MAE
 import math
 from sklearn.metrics import confusion_matrix, f1_score
+import matplotlib.pyplot as plt
+import seaborn as sns
 
+def reg_loss(model):
+    # Regularization term
+    reg_loss = 0
+    for param in model.parameters():
+        reg_loss += torch.sum(torch.square(param))
+    # Total loss
+    return 0.1 * reg_loss 
 
 class SimpleModel(nn.Module):
     def __init__(self, input_dim, hidden_dim, num_classes):
         super(SimpleModel, self).__init__()
         self.fc1 = nn.Linear(input_dim, hidden_dim)
-        self.fc2 = nn.Linear(hidden_dim, num_classes)  # num_classes is the number of classes in your classification task
+        self.fc2 = nn.Linear(hidden_dim, num_classes)
+        # num_classes is the number of classes in your classification task
+        #self.fc3 = nn.Linear(hidden_dim, num_classes)  
+
+        init.kaiming_normal_(self.fc1.weight, mode='fan_in', nonlinearity='leaky_relu')
+        #init.kaiming_normal_(self.fc2.weight, mode='fan_in', nonlinearity='leaky_relu')
         
     def forward(self, x):
         x = self.fc1(x)
         x = nn.functional.leaky_relu(x)
         x = self.fc2(x)
+        #x = nn.functional.leaky_relu(x)
+        #x = self.fc3(x)
         x = nn.functional.softmax(x, dim=1)
         return x
 
@@ -46,11 +64,12 @@ def prep_timeseries(timeseries):
             timeseries[idx] = F.normalize(t, p=1, dim=1)
     return timeseries
 
-def train_test(model, epochs = 100, lr = 0.001):
+def train_test(model, epochs = 100, lr = 0.1, latent_dim = 32, hidden_dim = 512):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # Get arguments from file
     # Define the model architecture
-    pretrained_model = model(input_dims= [(64, 128, 128, 3), (200, 352)], latent_dim=256, 
+
+    pretrained_model = model(input_dims= [(64, 128, 128, 3), (200, 352)], latent_dim=latent_dim, 
                     hidden_layers = [[128, 256, 512, 512], 256, 3], dropout= 0.2).to(device)
 
     model_name = pretrained_model.__class__.__name__
@@ -61,13 +80,21 @@ def train_test(model, epochs = 100, lr = 0.001):
     for param in pretrained_model.parameters():
         param.requires_grad = False
 
-    simple_model = SimpleModel(256, 128, 14).to(device)
+    if pretrained_model.__class__.__name__ == "MAE":
+        simple_model = SimpleModel(latent_dim * 2, hidden_dim, 14).to(device)
+    else: 
+        simple_model = SimpleModel(latent_dim, hidden_dim, 14).to(device)
 
     # Define loss function
     criterion = nn.CrossEntropyLoss()
 
     # Define optimizer
     optimizer = optim.Adam(simple_model.parameters(), lr=lr)
+
+    # LR scheduler
+    scheduler = ReduceLROnPlateau(optimizer, factor=0.1, patience=5) # Recude lr by factor after patience epochs
+    #scheduler = CosineAnnealingLR(optimizer, T_max=num_epochs)
+    #scheduler = StepLR(optimizer, step_size=int(num_epochs/4), gamma=0.1)
 
 
     video_train_loader, video_test_loader, timeseries_train_loader, timeseries_test_loader, label_train, label_test, risk_train, risk_test = get_dataloaders(
@@ -99,7 +126,7 @@ def train_test(model, epochs = 100, lr = 0.001):
                 else: 
                     recon_video, latent_representation = pretrained_model(video)
                     latent = latent_representation
-            elif "MVAE" in model_name:
+            elif "M" in model_name:
                 video = video.to(device)
                 timeseries = [t.to(device) for t in timeseries]
                 timeseries = prep_timeseries(timeseries)
@@ -113,6 +140,7 @@ def train_test(model, epochs = 100, lr = 0.001):
             
             output = simple_model(latent)
             loss = criterion(output, label)
+            loss += reg_loss(simple_model)
             
             train_loss += loss.item()
             loss.backward()
@@ -135,7 +163,7 @@ def train_test(model, epochs = 100, lr = 0.001):
                     else: 
                         recon_video, latent_representation = pretrained_model(video)
                         latent = latent_representation
-                elif "MVAE" in model_name:
+                elif "M" in model_name:
                     video = video.to(device)
                     timeseries = [t.to(device) for t in timeseries]
                     timeseries = prep_timeseries(timeseries)
@@ -149,9 +177,10 @@ def train_test(model, epochs = 100, lr = 0.001):
                 
                 output = simple_model(latent)
                 loss = criterion(output, label)
+                loss += reg_loss(simple_model)
                 test_loss += loss.item()
         # lr schedule step
-        #scheduler.step(test_loss) # For plateau
+        scheduler.step(test_loss) # For plateau
         #scheduler.step() # for other
         test_loss /= len(video_test_loader.dataset)
         test_losses.append(test_loss)
@@ -167,13 +196,16 @@ def train_test(model, epochs = 100, lr = 0.001):
     print("Finished training")
     print(f"Best test loss: {best_val_loss:.6f} at epoch: {best_val_loss_epoch}")
 
-    evaluate(pretrained_model, model_name)
+    evaluate(pretrained_model, model_name, latent_dim = latent_dim, hidden_dim = hidden_dim)
 
-def evaluate(pretrained_model, model_name):
+def evaluate(pretrained_model, model_name, latent_dim = 32, hidden_dim = 256):
     print("Start evaluation", flush = True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # load simple model
-    simple_model = SimpleModel(256, 128, 14).to(device)
+    if pretrained_model.__class__.__name__ == "MAE":
+        simple_model = SimpleModel(latent_dim * 2, hidden_dim, 14).to(device)
+    else: 
+        simple_model = SimpleModel(latent_dim, hidden_dim, 14).to(device)
     simple_model.load_state_dict(torch.load(f'models/{model_name}_simple_state.pth'))
     # Load dataloaders
     video_train_loader, video_test_loader, timeseries_train_loader, timeseries_test_loader, label_train, label_test, risk_train, risk_test = get_dataloaders(
@@ -200,7 +232,7 @@ def evaluate(pretrained_model, model_name):
                 else: 
                     recon_video, latent_representation = pretrained_model(video)
                     latent = latent_representation
-            elif "MVAE" in model_name:
+            elif "M" in model_name:
                 video = video.to(device)
                 timeseries = [t.to(device) for t in timeseries]
                 timeseries = prep_timeseries(timeseries)
@@ -223,14 +255,24 @@ def evaluate(pretrained_model, model_name):
     y_preds = torch.cat(y_preds, dim = 0)
     labels = torch.cat(labels, dim = 0)
     
-    conf_matrix = confusion_matrix(labels, y_preds)
+    cm = confusion_matrix(labels, y_preds)
     f1 = f1_score(labels, y_preds, average="weighted")
+    label_ticks = [str(i) for i in range(1, 15)]
 
     print(f"\nEvaluation of fine-tuned {model_name} model\n")
 
     print("Confusion matrix")
-    for idx, line in enumerate(conf_matrix):
-        print(f"{idx + 1} | {line}")
+    print(label_ticks)
+    for idx, line in enumerate(cm):
+        print(f"{idx+1} {line}")
+
+    cm_norm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+    sns.set(font_scale=1.2) # adjust the font size
+    sns.heatmap(cm_norm, annot=False, fmt='.2f', xticklabels= label_ticks, yticklabels=label_ticks, cmap='Reds')
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    #plt.title('Confusion Matrix')
+    plt.savefig(f"results/classification_results/{model_name}_confusion_matrix")
     
     print(f"F1 Score: {f1}")
 
@@ -238,4 +280,4 @@ if __name__ == "__main__":
     torch.manual_seed(42)
     np.random.seed(42)
     print("Start classification fine-tuning")
-    train_test(TimeseriesVAE, epochs=20)
+    train_test(VideoAutoencoder, epochs=30, lr=0.1)

@@ -3,6 +3,7 @@ import torch.nn as nn
 import numpy as np
 import torch.nn.functional as F
 import torch.nn.init as init
+import torchvision.models as models
 
 class Flatten(torch.nn.Module):
     def forward(self, x):
@@ -43,6 +44,7 @@ class VideoEncoder(nn.Module):
         ])
         
         self.fc = nn.Linear(self.hs[3], latent_dim)
+        self.sigmoid = nn.Sigmoid()
 
         # Weight init
         for m in self.model:
@@ -51,7 +53,7 @@ class VideoEncoder(nn.Module):
                 if m.bias is not None:
                     init.constant_(m.bias, 0.0)
 
-        init.kaiming_normal_(self.fc.weight, mode='fan_in', nonlinearity='leaky_relu')
+        #nn.init.xavier_uniform_(self.fc.weight)
 
     def forward(self, x):
         if torch.any(torch.isnan(x)):
@@ -62,7 +64,38 @@ class VideoEncoder(nn.Module):
                 print("NaN in: Encoder ", layer)
             #print(layer, x.size())
         x = x.view(x.size(0), -1)
+        #latent = self.sigmoid(self.fc(x))
         latent = self.fc(x)
+        return latent
+
+class VideoEncoderPretrained(nn.Module):
+    def __init__(self, latent_dim, input_shape, hidden_shape, dropout):
+        super(VideoEncoderPretrained, self).__init__()
+        self.n_frames = input_shape[0]
+        self.height = input_shape[1]
+        self.width = input_shape[2]
+        self.n_channel = input_shape[3]
+        self.hs = hidden_shape
+
+        self.backbone = models.video.r3d_18()
+
+        self.backbone = nn.Sequential(*list(self.backbone.children())[:-1])
+
+        for param in self.backbone.parameters():
+            param.requires_grad = False
+
+        self.fc = nn.Linear(512, latent_dim)
+
+    def forward(self, x):
+        if torch.any(torch.isnan(x)):
+            print("NaN in: Encoder input")
+        x = self.backbone(x)
+        if torch.any(torch.isnan(x)):
+            print("NaN in: backbone")
+        x = x.view(x.size(0), -1)
+        latent = self.fc(x)
+        if torch.any(torch.isnan(x)):
+            print("NaN in: last linear layer")
         return latent
 
 class VideoDecoder(nn.Module):
@@ -102,6 +135,8 @@ class VideoDecoder(nn.Module):
                     init.constant_(m.bias, 0.0)
 
     def forward(self, x):
+        if torch.any(torch.isnan(x)):
+            print("NaN in: Decoder input")
         for layer in self.model:
             x = layer(x)
             if torch.any(torch.isnan(x)):
@@ -116,11 +151,12 @@ class VideoAutoencoder(nn.Module):
         self.video_input_shape = input_dims[0]
         self.hidden_shape = hidden_layers[0]
         # Encoder
-        self.video_encoder = VideoEncoder(latent_dim = latent_dim, 
+        self.video_encoder = VideoEncoderPretrained(latent_dim = latent_dim, 
                                             input_shape = self.video_input_shape, 
                                             hidden_shape = self.hidden_shape,
                                             dropout = dropout
                                         )
+            
         # Decoder
         self.video_decoder = VideoDecoder(latent_dim = latent_dim, 
                                             input_shape = self.video_input_shape, 
