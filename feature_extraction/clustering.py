@@ -141,12 +141,12 @@ def prep_timeseries(timeseries):
             timeseries[idx] = F.normalize(t, p=1, dim=1)
     return timeseries
 
-def get_latent(model):
+def get_latent(model, latent_dim, hidden_layers):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # Get arguments from file
     # Define the model architecture
-    model = model(input_dims= [(64, 128, 128, 3), (200, 352)], latent_dim=32, 
-                    hidden_layers = [[128, 256, 512, 512], 256, 3], dropout= 0.2).to(device)
+    model = model(input_dims= [(64, 128, 128, 3), (200, 352)], latent_dim=latent_dim, 
+                    hidden_layers = hidden_layers, dropout= 0.2).to(device)
 
     model_name = model.__class__.__name__
 
@@ -199,9 +199,9 @@ def get_latent(model):
             flattened_labels.append(label)
     return latents, flattened_labels, model_name
 
-def run(model):
+def run_cluster(model, latent_dim, hidden_layers):
     print("Started")
-    latents, labels, model_name = get_latent(model)
+    latents, labels, model_name = get_latent(model, latent_dim, hidden_layers)
     print("Latent representations ready")
     for i in range(2, 15):
         print("\nCluster ", i, flush = True)
@@ -212,4 +212,4 @@ if __name__ == "__main__":
     print("Run Cluster")
     torch.manual_seed(42)
     np.random.seed(42)
-    run(VideoAutoencoder)
+    run_cluster(VideoAutoencoder)

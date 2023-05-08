@@ -1,0 +1,31 @@
+Using device: cuda
+Model: VideoAutoencoder
+Number of parameters in model:  583761545
+torch.cuda.memory_allocated: 2.186767GB
+torch.cuda.memory_reserved: 2.189453GB
+torch.cuda.max_memory_reserved: 2.189453GB
+Start training
+Time taken: 1462.56 seconds
+Epoch: 9 	 Train Loss: 206942.549814	 Test Loss: 194585.467284
+Time taken: 2941.99 seconds
+Epoch: 19 	 Train Loss: 183383.012254	 Test Loss: 184960.780247
+Time taken: 4454.69 seconds
+Epoch: 29 	 Train Loss: 175353.787294	 Test Loss: 175289.768519
+Time taken: 6022.26 seconds
+Epoch: 39 	 Train Loss: 169452.423548	 Test Loss: 169032.964506
+Time taken: 7655.10 seconds
+Epoch: 49 	 Train Loss: 165015.578316	 Test Loss: 168306.673457
+Time taken: 9361.34 seconds
+Epoch: 59 	 Train Loss: 160912.220432	 Test Loss: 170037.208333
+Time taken: 11052.61 seconds
+Epoch: 69 	 Train Loss: 158818.210709	 Test Loss: 168601.089815
+Time taken: 12742.35 seconds
+Epoch: 79 	 Train Loss: 159021.519313	 Test Loss: 168274.888889
+Time taken: 14427.52 seconds
+Epoch: 89 	 Train Loss: 158596.334310	 Test Loss: 165724.206173
+Time taken: 16108.48 seconds
+Epoch: 99 	 Train Loss: 159351.060469	 Test Loss: 167803.091975
+Finished training
+Time taken: 16108.48 seconds
+Best test loss: 163436.133025 at epoch: 83
+Video loss: 1855.669907 at epoch: 83

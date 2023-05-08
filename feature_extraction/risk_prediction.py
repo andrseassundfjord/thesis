@@ -15,6 +15,15 @@ from VideoBert import VideoBERT
 from VideoBERT_pretrained import VideoBERT_pretrained
 import math
 from sklearn.metrics import mean_absolute_percentage_error
+from torch.optim.lr_scheduler import CosineAnnealingLR, ReduceLROnPlateau, StepLR
+
+def reg_loss(model):
+    # Regularization term
+    reg_loss = 0
+    for param in model.parameters():
+        reg_loss += torch.sum(torch.square(param))
+    # Total loss
+    return 0.1 * reg_loss 
 
 class SimpleModel(nn.Module):
     def __init__(self, input_dim, hidden_dim):
@@ -26,6 +35,7 @@ class SimpleModel(nn.Module):
         x = self.fc1(x)
         x = nn.functional.leaky_relu(x)
         x = self.fc2(x)
+        x = 10 * F.sigmoid(x) - 5
         x = x.view(-1)
         return x
 
@@ -45,12 +55,13 @@ def prep_timeseries(timeseries):
             timeseries[idx] = F.normalize(t, p=1, dim=1)
     return timeseries
 
-def train_test(model, epochs = 100, lr = 0.001):
+def train_test_risk(model, epochs = 100, lr = 0.01, latent_dim = 32, hidden_dim = 512, hidden_layers = [[128, 256, 512, 512], 256, 3]):
+    print("\nStart risk score fine-tuning")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # Get arguments from file
     # Define the model architecture
-    pretrained_model = model(input_dims= [(64, 128, 128, 3), (200, 352)], latent_dim=256, 
-                    hidden_layers = [[128, 256, 512, 512], 256, 3], dropout= 0.2).to(device)
+    pretrained_model = model(input_dims= [(64, 128, 128, 3), (200, 352)], latent_dim=latent_dim, 
+                    hidden_layers = hidden_layers, dropout= 0.2).to(device)
 
     model_name = pretrained_model.__class__.__name__
 
@@ -60,7 +71,7 @@ def train_test(model, epochs = 100, lr = 0.001):
     for param in pretrained_model.parameters():
         param.requires_grad = False
 
-    simple_model = SimpleModel(256, 128).to(device)
+    simple_model = SimpleModel(latent_dim, hidden_dim).to(device)
 
     # Define loss function
     criterion = nn.MSELoss()
@@ -68,6 +79,10 @@ def train_test(model, epochs = 100, lr = 0.001):
     # Define optimizer
     optimizer = optim.Adam(simple_model.parameters(), lr=lr)
 
+    # LR scheduler
+    scheduler = ReduceLROnPlateau(optimizer, factor=0.1, patience=5) # Recude lr by factor after patience epochs
+    #scheduler = CosineAnnealingLR(optimizer, T_max=num_epochs)
+    #scheduler = StepLR(optimizer, step_size=int(num_epochs/4), gamma=0.1)
 
     video_train_loader, video_test_loader, timeseries_train_loader, timeseries_test_loader, label_train, label_test, risk_train, risk_test = get_dataloaders(
                                                 '/work5/share/NEDO/nedo-2019/data/processed_rosbags_topickles/fixed_pickles', 
@@ -112,6 +127,7 @@ def train_test(model, epochs = 100, lr = 0.001):
             
             output = simple_model(latent)
             loss = criterion(output, riskScore)
+            loss += reg_loss(simple_model)
             
             train_loss += loss.item()
             loss.backward()
@@ -148,9 +164,10 @@ def train_test(model, epochs = 100, lr = 0.001):
                 
                 output = simple_model(latent)
                 loss = criterion(output, riskScore)
+                loss += reg_loss(simple_model)
                 test_loss += loss.item()
         # lr schedule step
-        #scheduler.step(test_loss) # For plateau
+        scheduler.step(test_loss) # For plateau
         #scheduler.step() # for other
         test_loss /= len(video_test_loader.dataset)
         test_losses.append(test_loss)
@@ -160,19 +177,19 @@ def train_test(model, epochs = 100, lr = 0.001):
             torch.save(simple_model.state_dict(), f'models/{model_name}_risk_state.pth')
 
         # Print loss
-        if ( epoch + 1 ) % 2 == 0:
+        if ( epoch + 1 ) % 5 == 0:
             print('Epoch: {} \t Train Loss: {:.6f}\t Test Loss: {:.6f}'.format(epoch, train_loss, test_loss), flush = True)
 
     print(f"Finished training {model_name} for risk score prediction")
     print(f"Best test loss: {best_val_loss:.6f} at epoch: {best_val_loss_epoch}")
 
-    evaluate(pretrained_model, model_name)
+    evaluate(pretrained_model, model_name, latent_dim, hidden_dim)
 
-def evaluate(pretrained_model, model_name):
+def evaluate(pretrained_model, model_name, latent_dim, hidden_dim):
     print("Start evaluation", flush = True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # load simple model
-    simple_model = SimpleModel(256, 128).to(device)
+    simple_model = SimpleModel(latent_dim, hidden_dim).to(device)
     simple_model.load_state_dict(torch.load(f'models/{model_name}_risk_state.pth'))
     # Load dataloaders
     video_train_loader, video_test_loader, timeseries_train_loader, timeseries_test_loader, label_train, label_test, risk_train, risk_test = get_dataloaders(
@@ -229,5 +246,4 @@ def evaluate(pretrained_model, model_name):
 if __name__ == "__main__":
     torch.manual_seed(42)
     np.random.seed(42)
-    print("Start risk score fine-tuning")
-    train_test(MVAE, epochs=20)
+    train_test_risk(MVAE, epochs=20)

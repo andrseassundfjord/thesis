@@ -1,0 +1,32 @@
+Started: VideoVAE_pretrained_512
+Using device: cuda
+Model: VideoVAE
+Number of parameters in model:  584483401
+torch.cuda.memory_allocated: 2.189456GB
+torch.cuda.memory_reserved: 2.193359GB
+torch.cuda.max_memory_reserved: 2.193359GB
+Start training
+Time taken: 1506.93 seconds
+Epoch: 9 	 Train Loss: 325599.974427	 Test Loss: 315701.439506
+Time taken: 3018.63 seconds
+Epoch: 19 	 Train Loss: 261516.519712	 Test Loss: 250578.375309
+Time taken: 4499.35 seconds
+Epoch: 29 	 Train Loss: 237327.195791	 Test Loss: 227973.394444
+Time taken: 6025.93 seconds
+Epoch: 39 	 Train Loss: 224418.332978	 Test Loss: 210013.697222
+Time taken: 7481.39 seconds
+Epoch: 49 	 Train Loss: 213092.599627	 Test Loss: 201945.317901
+Time taken: 8933.33 seconds
+Epoch: 59 	 Train Loss: 206778.611082	 Test Loss: 192968.170370
+Time taken: 10403.41 seconds
+Epoch: 69 	 Train Loss: 200555.215503	 Test Loss: 189709.871605
+Time taken: 11828.95 seconds
+Epoch: 79 	 Train Loss: 197425.741076	 Test Loss: 186810.009259
+Time taken: 13284.55 seconds
+Epoch: 89 	 Train Loss: 196992.141982	 Test Loss: 186215.004784
+Time taken: 14738.85 seconds
+Epoch: 99 	 Train Loss: 195920.184070	 Test Loss: 187166.277469
+Finished training
+Time taken: 14738.85 seconds
+Best test loss: 184851.658951 at epoch: 96
+Video loss: 2103.693056 at epoch: 96

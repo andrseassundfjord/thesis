@@ -7,7 +7,7 @@ from components import TimeseriesEncoder, TimeseriesDecoder
 #from models import GAT
 
 class TimeseriesVAE(nn.Module):
-    def __init__(self, input_dims, latent_dim, hidden_layers, dropout, embedding_dim = 8, cat_cols = None):
+    def __init__(self, input_dims, latent_dim, hidden_layers, dropout, embedding_dim = 4, cat_cols = None):
         super(TimeseriesVAE, self).__init__()
 
         seq_len = input_dims[1][0]

@@ -6,10 +6,8 @@ import numpy as np
 from load_dataset import get_dataloaders, VideoDataset, DataFrameTimeseriesDataset
 from MVAE import MVAE
 from TimeseriesVAE import TimeseriesVAE
-from TimeseriesVAE2 import TimeseriesVAE2
 from VideoVAE import VideoVAE
 from VideoAutoencoder import VideoAutoencoder
-from VideoBert import VideoBERT
 from VideoBERT_pretrained import VideoBERT_pretrained
 from MAE import MAE
 from HMAE import HMAE
@@ -50,26 +48,24 @@ def reg_loss(model):
 def kmeans_loss(z):
     z = torch.cat(z, dim = 0)
     z = z.detach().to("cpu").numpy()
+    l = len(z) // 4
     loss = 0
     means = group_by_mod32_mean(z)
     for i in range(len(z)):
-        mean = means[i % 32]
+        mean = means[i % l]
         loss += np.linalg.norm(z[i] - mean)
     return loss
 
 def group_by_mod32_mean(z):
-    group_dict = {}
-    for i in range(len(z)):
-        mod32 = z[i] % 32
-        if mod32 in group_dict:
-            group_dict[mod32].append(i)
-        else:
-            group_dict[mod32] = [i]
     means = []
-    for mod32, indices in group_dict.items():
-        group_mean = torch.mean(z[indices])
-        means.append(group_mean)
-    return torch.stack(means)
+    l = len(z) // 4
+    for i in range(l):
+        mean = 0
+        for j in range(4):
+            mean += z[i + l * j]
+        mean = mean / 4
+        means.append(mean)
+    return means
 
 def run(
         savename,
@@ -89,10 +85,10 @@ def run(
         split_size  = 4
     ):
 
+    print(f"Started: {savename}, Augmented run")
     # Set device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}", flush = True)
-    print("Augmented run")
 
     #torch.cuda.empty_cache()
 
@@ -281,7 +277,7 @@ def run(
                         # Forward pass
                         recon_video, kl_divergence, latent, mus = model(video)
                         loss = reconstruction_loss(recon_video, video)
-                        test_video_loss = loss.item()
+                        test_video_loss += loss.item()
                         loss += kl_divergence
                         loss += reg_loss(model)
                         samples.append(mus.to("cpu"))
@@ -311,7 +307,7 @@ def run(
                         recon_split.extend(torch.split(recon_timeseries[2], [t.size(2) for t in timeseries[5:]], dim=-1))
                         for recon, nan_mask, t in zip(recon_split, masks, timeseries):
                             loss += reconstruction_loss(recon[~nan_mask], t[~nan_mask])
-                        test_time_loss = loss.item()
+                        test_time_loss += loss.item()
                         loss += kl_divergence
                         loss += reg_loss(model)
                         samples.append(mus.to("cpu"))
@@ -321,7 +317,7 @@ def run(
                         # Forward pass
                         reconstructed, latent_representation = model(video)
                         loss = reconstruction_loss(reconstructed, video)
-                        test_video_loss = loss.item()
+                        test_video_loss += loss.item()
                         loss += reg_loss(model)
                         samples.append(latent_representation.to("cpu"))
                     else:
@@ -374,7 +370,7 @@ def run(
             best_val_loss = test_loss
             best_val_loss_epoch = epoch
             if save:
-                torch.save(model.state_dict(), f'models/{type(model).__name__}_state.pth')
+                torch.save(model.state_dict(), f'augmented_models/{type(model).__name__}_state.pth')
         # Print loss
         if ( epoch + 1 ) % 10 == 0:
             end_time = time.time()
