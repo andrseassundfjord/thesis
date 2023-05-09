@@ -1,0 +1,28 @@
+Started: MidMVAE, Augmented run
+Using device: cuda
+Model: MidMVAE
+Number of parameters in model:  300415955
+torch.cuda.memory_allocated: 1.121812GB
+torch.cuda.memory_reserved: 1.142578GB
+torch.cuda.max_memory_reserved: 1.142578GB
+Start training
+Traceback (most recent call last):
+  File "run_MVAE_augmented.py", line 493, in <module>
+    run(
+  File "run_MVAE_augmented.py", line 243, in run
+    recon_video, recon_timeseries, kl_divergence, latent_representation, mus = model((video, timeseries_input))
+  File "/work6/a_sundfjord/thesis/env/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1194, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/work6/a_sundfjord/thesis/feature_extraction/MidMVAE.py", line 146, in forward
+    encoded_video = self.encodeVideo(modalities[0])
+  File "/work6/a_sundfjord/thesis/feature_extraction/MidMVAE.py", line 124, in encodeVideo
+    return [self.video_encoder(input)]
+  File "/work6/a_sundfjord/thesis/env/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1194, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/work6/a_sundfjord/thesis/feature_extraction/MidMVAE.py", line 399, in forward
+    features = self.model(features)
+  File "/work6/a_sundfjord/thesis/env/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1194, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/work6/a_sundfjord/thesis/env/lib/python3.8/site-packages/torch/nn/modules/module.py", line 246, in _forward_unimplemented
+    raise NotImplementedError(f"Module [{type(self).__name__}] is missing the required \"forward\" function")
+NotImplementedError: Module [ModuleList] is missing the required "forward" function

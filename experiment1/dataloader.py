@@ -264,7 +264,7 @@ def compute_sample_correlation(n_files = 1, interpolate = False):
     # Load the original timeseries dataframe
     df_list = [series_to_dataframe(series) for series in series_list]
     # Define a list of n values to resample the dataframe
-    n_values = [50, 75, 100, 125, 150, 175, 200]
+    n_values = [50, 75, 100, 125, 150, 175, 200, 250, 300, 500]
     # Get list of all features 
     all_features = set().union(*[set(df.columns) for df in df_list])
     # Create an empty DataFrame to store the correlation coefficients
@@ -283,6 +283,8 @@ def compute_sample_correlation(n_files = 1, interpolate = False):
         corr_df["n_under_0.5"][n] = 0
     # Loop over the n values and resample the dataframe for each n
     for df in df_list:
+        if len(df.index) == 0:
+            continue
         for n in n_values:
             resampled_df = resample_dataframe(df, n_samples = n, interpolate = interpolate)
             # Compute the correlation coefficients between the original and resampled data for each feature
@@ -348,7 +350,7 @@ if __name__ == "__main__":
     #plot_statistics()
     #get_dataset_statistics()
     #get_n_samples()
-    #compute_sample_correlation(n_files = 500)
+    compute_sample_correlation(n_files = 2000)
     #save_single_df(path, n_samples = 200, test=False, interpolate = True, normalize = True)
     #get_feature_names()
-    plot_together()
+    #plot_together()

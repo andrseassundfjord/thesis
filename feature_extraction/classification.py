@@ -64,18 +64,20 @@ def prep_timeseries(timeseries):
             timeseries[idx] = F.normalize(t, p=1, dim=1)
     return timeseries
 
-def train_test(model, epochs = 100, lr = 0.1, latent_dim = 32, hidden_dim = 512):
+def train_test_classification(model, epochs = 100, lr = 0.1, latent_dim = 32, hidden_dim = 512, hidden_layers = [[128, 256, 512, 512], 256, 3], split_size = 1):
+    print("\nStart classification fine-tuning")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    # Get arguments from file
     # Define the model architecture
-
-    pretrained_model = model(input_dims= [(64, 128, 128, 3), (200, 352)], latent_dim=latent_dim, 
-                    hidden_layers = [[128, 256, 512, 512], 256, 3], dropout= 0.2).to(device)
+    pretrained_model = model(input_dims= [(64 // split_size, 128, 128, 3), (200 // split_size, 352)], latent_dim=latent_dim, 
+                    hidden_layers = hidden_layers, dropout= 0.2).to(device)
 
     model_name = pretrained_model.__class__.__name__
 
     # Load the model state
-    pretrained_model.load_state_dict(torch.load(f'models/{model_name}_state.pth'))
+    if split_size > 1:
+        pretrained_model.load_state_dict(torch.load(f'augmented_models/{model_name}_state.pth'))
+    else:
+        pretrained_model.load_state_dict(torch.load(f'models/{model_name}_state.pth'))
     
     for param in pretrained_model.parameters():
         param.requires_grad = False
@@ -93,9 +95,6 @@ def train_test(model, epochs = 100, lr = 0.1, latent_dim = 32, hidden_dim = 512)
 
     # LR scheduler
     scheduler = ReduceLROnPlateau(optimizer, factor=0.1, patience=5) # Recude lr by factor after patience epochs
-    #scheduler = CosineAnnealingLR(optimizer, T_max=num_epochs)
-    #scheduler = StepLR(optimizer, step_size=int(num_epochs/4), gamma=0.1)
-
 
     video_train_loader, video_test_loader, timeseries_train_loader, timeseries_test_loader, label_train, label_test, risk_train, risk_test = get_dataloaders(
                                                 '/work5/share/NEDO/nedo-2019/data/processed_rosbags_topickles/fixed_pickles', 
@@ -116,45 +115,18 @@ def train_test(model, epochs = 100, lr = 0.1, latent_dim = 32, hidden_dim = 512)
         simple_model.train()
         train_loss = 0
         for video, timeseries, label in zip(video_train_loader, timeseries_train_loader, label_train):
+            loss = 0
             optimizer.zero_grad()
             label = torch.tensor([int(l)-1 for l in label]).to(device)
-            if "Video" in model_name:
-                video = video.to(device)
-                if "VAE" in model_name:
-                    recon_video, kl_divergence, latent_representation, mus = pretrained_model(video)
-                    latent = mus
-                else: 
-                    recon_video, latent_representation = pretrained_model(video)
-                    latent = latent_representation
-            elif "M" in model_name:
-                video = video.to(device)
-                timeseries = [t.to(device) for t in timeseries]
-                timeseries = prep_timeseries(timeseries)
-                recon_video, recon_timeseries, kl_divergence, latent_representation, mus = pretrained_model([video, timeseries])
-                latent = mus
-            else:
-                timeseries = [t.to(device) for t in timeseries]
-                timeseries = prep_timeseries(timeseries)
-                recon_timeseries, kl_divergence, latent_representation, mus = pretrained_model(timeseries)
-                latent = mus
-            
-            output = simple_model(latent)
-            loss = criterion(output, label)
-            loss += reg_loss(simple_model)
-            
-            train_loss += loss.item()
-            loss.backward()
-            optimizer.step()
-
-        train_loss /= len(video_train_loader.dataset)
-        train_losses.append(train_loss)
-        # Test
-        pretrained_model.eval()
-        simple_model.eval()
-        test_loss = 0
-        with torch.no_grad():
-            for video, timeseries, label in zip(video_test_loader, timeseries_test_loader, label_test):
-                label = torch.tensor([int(l)-1 for l in label]).to(device)
+            video_slices = torch.split(video, video.size(2) // split_size, dim=2)
+            timeseries_slices = [[] for _ in range(split_size)]
+            for t in timeseries:
+                split_t = torch.split(t, t.size(1) // split_size, dim = 1)
+                for idx, split in enumerate(split_t):
+                    timeseries_slices[idx].append(split)
+            for i in range(split_size):
+                video = video_slices[i]
+                timeseries = timeseries_slices[i]
                 if "Video" in model_name:
                     video = video.to(device)
                     if "VAE" in model_name:
@@ -163,31 +135,82 @@ def train_test(model, epochs = 100, lr = 0.1, latent_dim = 32, hidden_dim = 512)
                     else: 
                         recon_video, latent_representation = pretrained_model(video)
                         latent = latent_representation
-                elif "M" in model_name:
+                elif "Time" in model_name:
+                    timeseries = [t.to(device) for t in timeseries]
+                    timeseries = prep_timeseries(timeseries)
+                    recon_timeseries, kl_divergence, latent_representation, mus = pretrained_model(timeseries)
+                    latent = mus
+                else:
                     video = video.to(device)
                     timeseries = [t.to(device) for t in timeseries]
                     timeseries = prep_timeseries(timeseries)
                     recon_video, recon_timeseries, kl_divergence, latent_representation, mus = pretrained_model([video, timeseries])
                     latent = mus
-                else:
-                    timeseries = [t.to(device) for t in timeseries]
-                    timeseries = prep_timeseries(timeseries)
-                    recon_timeseries, kl_divergence, latent_representation, mus = pretrained_model(timeseries)
-                    latent = mus
-                
+            
                 output = simple_model(latent)
-                loss = criterion(output, label)
+                loss += criterion(output, label)
+            
+            loss += reg_loss(simple_model)
+            
+            train_loss += loss.item()
+            loss.backward()
+            optimizer.step()
+
+        train_loss /= (len(video_train_loader.dataset) * split_size)
+        train_losses.append(train_loss)
+        # Test
+        pretrained_model.eval()
+        simple_model.eval()
+        test_loss = 0
+        with torch.no_grad():
+            for video, timeseries, label in zip(video_test_loader, timeseries_test_loader, label_test):
+                loss = 0
+                label = torch.tensor([int(l)-1 for l in label]).to(device)
+                video_slices = torch.split(video, video.size(2) // split_size, dim=2)
+                timeseries_slices = [[] for _ in range(split_size)]
+                for t in timeseries:
+                    split_t = torch.split(t, t.size(1) // split_size, dim = 1)
+                    for idx, split in enumerate(split_t):
+                        timeseries_slices[idx].append(split)
+                for i in range(split_size):
+                    video = video_slices[i]
+                    timeseries = timeseries_slices[i]
+                    if "Video" in model_name:
+                        video = video.to(device)
+                        if "VAE" in model_name:
+                            recon_video, kl_divergence, latent_representation, mus = pretrained_model(video)
+                            latent = mus
+                        else: 
+                            recon_video, latent_representation = pretrained_model(video)
+                            latent = latent_representation
+                    elif "Time" in model_name:
+                        timeseries = [t.to(device) for t in timeseries]
+                        timeseries = prep_timeseries(timeseries)
+                        recon_timeseries, kl_divergence, latent_representation, mus = pretrained_model(timeseries)
+                        latent = mus
+                    else:
+                        video = video.to(device)
+                        timeseries = [t.to(device) for t in timeseries]
+                        timeseries = prep_timeseries(timeseries)
+                        recon_video, recon_timeseries, kl_divergence, latent_representation, mus = pretrained_model([video, timeseries])
+                        latent = mus
+                    
+                    output = simple_model(latent)
+                    loss += criterion(output, label)
                 loss += reg_loss(simple_model)
                 test_loss += loss.item()
         # lr schedule step
         scheduler.step(test_loss) # For plateau
         #scheduler.step() # for other
-        test_loss /= len(video_test_loader.dataset)
+        test_loss /= (len(video_test_loader.dataset) * split_size)
         test_losses.append(test_loss)
         if test_loss < best_val_loss:
             best_val_loss = test_loss
             best_val_loss_epoch = epoch
-            torch.save(simple_model.state_dict(), f'models/{model_name}_simple_state.pth')
+            if split_size > 1:
+                torch.save(simple_model.state_dict(), f'augmented_models/{model_name}_simple_state.pth')
+            else:
+                torch.save(simple_model.state_dict(), f'models/{model_name}_simple_state.pth')
 
         # Print loss
         if ( epoch + 1 ) % 2 == 0:
@@ -196,9 +219,9 @@ def train_test(model, epochs = 100, lr = 0.1, latent_dim = 32, hidden_dim = 512)
     print("Finished training")
     print(f"Best test loss: {best_val_loss:.6f} at epoch: {best_val_loss_epoch}")
 
-    evaluate(pretrained_model, model_name, latent_dim = latent_dim, hidden_dim = hidden_dim)
+    evaluate(pretrained_model, model_name, latent_dim = latent_dim, hidden_dim = hidden_dim, split_size = split_size)
 
-def evaluate(pretrained_model, model_name, latent_dim = 32, hidden_dim = 256):
+def evaluate(pretrained_model, model_name, latent_dim = 32, hidden_dim = 256, split_size = 1):
     print("Start evaluation", flush = True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # load simple model
@@ -206,7 +229,11 @@ def evaluate(pretrained_model, model_name, latent_dim = 32, hidden_dim = 256):
         simple_model = SimpleModel(latent_dim * 2, hidden_dim, 14).to(device)
     else: 
         simple_model = SimpleModel(latent_dim, hidden_dim, 14).to(device)
-    simple_model.load_state_dict(torch.load(f'models/{model_name}_simple_state.pth'))
+        
+    if split_size > 1:
+        simple_model.load_state_dict(torch.load(f'augmented_models/{model_name}_simple_state.pth'))
+    else:
+        simple_model.load_state_dict(torch.load(f'models/{model_name}_simple_state.pth'))
     # Load dataloaders
     video_train_loader, video_test_loader, timeseries_train_loader, timeseries_test_loader, label_train, label_test, risk_train, risk_test = get_dataloaders(
                                                 '/work5/share/NEDO/nedo-2019/data/processed_rosbags_topickles/fixed_pickles', 
@@ -224,33 +251,42 @@ def evaluate(pretrained_model, model_name, latent_dim = 32, hidden_dim = 256):
     simple_model.eval()
     with torch.no_grad():
         for video, timeseries, label in zip(video_test_loader, timeseries_test_loader, label_test):
-            if "Video" in model_name:
-                video = video.to(device)
-                if "VAE" in model_name:
-                    recon_video, kl_divergence, latent_representation, mus = pretrained_model(video)
+            video_slices = torch.split(video, video.size(2) // split_size, dim=2)
+            timeseries_slices = [[] for _ in range(split_size)]
+            for t in timeseries:
+                split_t = torch.split(t, t.size(1) // split_size, dim = 1)
+                for idx, split in enumerate(split_t):
+                    timeseries_slices[idx].append(split)
+            for i in range(split_size):
+                video = video_slices[i]
+                timeseries = timeseries_slices[i]
+                if "Video" in model_name:
+                    video = video.to(device)
+                    if "VAE" in model_name:
+                        recon_video, kl_divergence, latent_representation, mus = pretrained_model(video)
+                        latent = mus
+                    else: 
+                        recon_video, latent_representation = pretrained_model(video)
+                        latent = latent_representation
+                elif "Time" in model_name:
+                    timeseries = [t.to(device) for t in timeseries]
+                    timeseries = prep_timeseries(timeseries)
+                    recon_timeseries, kl_divergence, latent_representation, mus = pretrained_model(timeseries)
                     latent = mus
-                else: 
-                    recon_video, latent_representation = pretrained_model(video)
-                    latent = latent_representation
-            elif "M" in model_name:
-                video = video.to(device)
-                timeseries = [t.to(device) for t in timeseries]
-                timeseries = prep_timeseries(timeseries)
-                recon_video, recon_timeseries, kl_divergence, latent_representation, mus = pretrained_model([video, timeseries])
-                latent = mus
-            else:
-                timeseries = [t.to(device) for t in timeseries]
-                timeseries = prep_timeseries(timeseries)
-                recon_timeseries, kl_divergence, latent_representation, mus = pretrained_model(timeseries)
-                latent = mus
-            
-            output = simple_model(latent)
-            y_pred = torch.argmax(output, dim = 1)
-            y_pred = torch.add(y_pred, 1)
+                else:
+                    video = video.to(device)
+                    timeseries = [t.to(device) for t in timeseries]
+                    timeseries = prep_timeseries(timeseries)
+                    recon_video, recon_timeseries, kl_divergence, latent_representation, mus = pretrained_model([video, timeseries])
+                    latent = mus
+                
+                output = simple_model(latent)
+                y_pred = torch.argmax(output, dim = 1)
+                y_pred = torch.add(y_pred, 1)
 
-            y_preds.append(y_pred.to("cpu"))
-            label = torch.tensor([int(l) for l in label])
-            labels.append(label)
+                y_preds.append(y_pred.to("cpu"))
+                label = torch.tensor([int(l) for l in label])
+                labels.append(label)
 
     y_preds = torch.cat(y_preds, dim = 0)
     labels = torch.cat(labels, dim = 0)
@@ -279,5 +315,4 @@ def evaluate(pretrained_model, model_name, latent_dim = 32, hidden_dim = 256):
 if __name__ == "__main__":
     torch.manual_seed(42)
     np.random.seed(42)
-    print("Start classification fine-tuning")
-    train_test(VideoAutoencoder, epochs=30, lr=0.1)
+    train_test_classification(VideoAutoencoder, epochs=30, lr=0.1, latent_dim=1024, hidden_dim=512)

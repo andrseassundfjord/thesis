@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from components import VideoEncoder, VideoDecoder
+from components import VideoEncoder, VideoEncoderPretrained, VideoDecoder
 
 class VideoVAE(nn.Module):
     def __init__(self, input_dims, latent_dim, hidden_layers, dropout):

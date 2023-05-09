@@ -6,6 +6,7 @@ import torch.nn as nn
 import numpy as np
 import torch.nn.functional as F
 import torch.nn.init as init
+import torchvision.models as models
 
 class Flatten(torch.nn.Module):
     def forward(self, x):
@@ -74,6 +75,44 @@ class VideoEncoder(nn.Module):
             if torch.any(torch.isnan(x)):
                 print("NaN in: Encoder ", layer)
             #print(layer, x.size())
+        x = x.view(x.size(0), -1)
+        mu = self.fc_mu(x)
+        log_var = self.fc_log_var(x)
+        z = self.reparameterize(mu, log_var)
+        return z, mu, log_var
+
+class VideoEncoderPretrained(nn.Module):
+    def __init__(self, latent_dim, input_shape, hidden_shape, dropout):
+        super(VideoEncoderPretrained, self).__init__()
+        self.n_frames = input_shape[0]
+        self.height = input_shape[1]
+        self.width = input_shape[2]
+        self.n_channel = input_shape[3]
+        self.hs = hidden_shape
+
+        self.backbone = models.video.r3d_18()
+
+        self.backbone = nn.Sequential(*list(self.backbone.children())[:-1])
+
+        for param in self.backbone.parameters():
+            param.requires_grad = False
+
+        self.fc = nn.Linear(512, self.hs[-1])
+
+        self.fc_mu = nn.Linear(self.hs[-1], latent_dim)
+        self.fc_log_var = nn.Linear(self.hs[-1], latent_dim)
+
+
+    def reparameterize(self, mu, log_var):
+        std = torch.exp(0.5 * log_var)
+        eps = torch.randn_like(std)
+        z = mu + eps * std
+        return z
+
+    def forward(self, x):
+        if torch.any(torch.isnan(x)):
+            print("NaN in: Encoder input")
+        x = self.backbone(x)
         x = x.view(x.size(0), -1)
         mu = self.fc_mu(x)
         log_var = self.fc_log_var(x)
@@ -162,10 +201,10 @@ class TimeseriesEncoder(nn.Module):
         cat_inp1: categorical variables with 1 and 0 as possible values
         cat_inp2: categorical variables with more than two possible values
         """
-        if self.input_dim > x.size(1):
-            diff = self.input_dim - x.size(1)
-            padding = torch.zeros((x.size(0), diff))
-            x = torch.cat((x, padding), dim = 1)   
+        if x.size(2) == 1:
+            print("Unexpected value in TimeseriesVAE encoder input: ", x.size(), ", expected: ", self.input_dim)
+            zeros = torch.zeros(x.size(0), self.latent_dim).to("cuda" if torch.cuda.is_available() else "cpu")
+            return zeros, zeros, zeros
         if self.categorical_cols is not None:
             cat_inputs = []
             for i, num_cardinals in enumerate(self.categorical_cols):
@@ -225,7 +264,7 @@ class TimeseriesDecoder(nn.Module):
         #self.lstm = nn.LSTM(hidden_dim, hidden_dim, num_layers=num_layers, batch_first=True, dropout = dropout, bidirectional = self.bidirectional)
         self.gru = nn.GRU(hidden_dim, hidden_dim, num_layers=num_layers, batch_first=True, dropout = dropout, bidirectional = self.bidirectional)
         bidir = 2 if self.bidirectional else 1
-        self.fc3 = nn.Linear(hidden_dim * bidir, seq_len)
+        self.fc3 = nn.Linear(hidden_dim * bidir, output_shape[1])
         # Define batchnorm
         self.bn = nn.BatchNorm1d(seq_len)
 
@@ -260,7 +299,7 @@ class TimeseriesDecoder(nn.Module):
         return output
 
 class TimeseriesEncoder2(nn.Module):
-    def __init__(self, hidden_dim, latent_dim, dropout, num_layers=1, categorical=None, embedding_dim = 8, bidirectional = False):
+    def __init__(self, hidden_dim, latent_dim, dropout, num_layers=1, categorical=None, embedding_dim = 4, bidirectional = False):
         super(TimeseriesEncoder2, self).__init__()
         self.input_dim = 1
         self.hidden_dim = hidden_dim

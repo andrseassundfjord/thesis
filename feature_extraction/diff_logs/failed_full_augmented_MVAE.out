@@ -1,0 +1,49 @@
+Started: MVAE_augmented, Augmented run
+Using device: cuda
+Model: MVAE
+Number of parameters in model:  709813376
+torch.cuda.memory_allocated: 2.647203GB
+torch.cuda.memory_reserved: 2.730469GB
+torch.cuda.max_memory_reserved: 2.730469GB
+Start training
+Time taken: 1844.50 seconds
+Epoch: 9 	 Train Loss: 86730.233751	 Test Loss: 81712.580093
+Time taken: 3665.22 seconds
+Epoch: 19 	 Train Loss: 68749.595831	 Test Loss: 65667.797261
+Time taken: 5471.95 seconds
+Epoch: 29 	 Train Loss: 66182.475160	 Test Loss: 64580.583526
+Time taken: 7292.07 seconds
+Epoch: 39 	 Train Loss: 53571.945059	 Test Loss: 44549.454321
+Time taken: 9119.62 seconds
+Epoch: 49 	 Train Loss: 42258.195425	 Test Loss: 39445.032639
+Time taken: 10926.16 seconds
+Epoch: 59 	 Train Loss: 39065.584410	 Test Loss: 38308.060532
+Time taken: 12750.19 seconds
+Epoch: 69 	 Train Loss: 37612.990244	 Test Loss: 37971.635610
+Time taken: 14557.91 seconds
+Epoch: 79 	 Train Loss: 35920.315663	 Test Loss: 34499.847299
+Time taken: 16357.82 seconds
+Epoch: 89 	 Train Loss: 34977.146577	 Test Loss: 33362.683989
+Time taken: 18170.69 seconds
+Epoch: 99 	 Train Loss: 33979.885222	 Test Loss: 32912.407292
+Time taken: 19966.66 seconds
+Epoch: 109 	 Train Loss: 33717.272676	 Test Loss: 33004.320949
+Time taken: 21758.90 seconds
+Epoch: 119 	 Train Loss: 32739.308404	 Test Loss: 32140.364198
+Time taken: 23544.90 seconds
+Epoch: 129 	 Train Loss: 32499.985482	 Test Loss: 33328.824614
+Time taken: 25342.13 seconds
+Epoch: 139 	 Train Loss: 32412.824254	 Test Loss: 34279.921489
+Time taken: 27140.24 seconds
+Epoch: 149 	 Train Loss: 32760.077983	 Test Loss: 31220.520255
+Finished training
+Time taken: 27140.24 seconds
+Best test loss: 30780.020023 at epoch: 140
+Timeseries loss: 4120.404847849151
+Video loss: 118865.57098765433, at epoch: 140
+Timeseries MAPE: nan
+Video MAPE: 4.829246
+Traceback (most recent call last):
+  File "run_MVAE_augmented.py", line 506, in <module>
+    
+TypeError: run_cluster() got an unexpected keyword argument 'split_size'

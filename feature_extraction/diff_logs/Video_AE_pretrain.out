@@ -1,0 +1,53 @@
+Started: VideoAE_full
+Using device: cuda
+Model: VideoAutoencoder
+Number of parameters in model:  584220745
+torch.cuda.memory_allocated: 2.188478GB
+torch.cuda.memory_reserved: 2.191406GB
+torch.cuda.max_memory_reserved: 2.191406GB
+Start training
+Time taken: 1512.96 seconds
+Epoch: 9 	 Train Loss: 203590.180341	 Test Loss: 199371.330864
+Time taken: 3075.30 seconds
+Epoch: 19 	 Train Loss: 180659.494672	 Test Loss: 179724.614043
+Time taken: 4631.31 seconds
+Epoch: 29 	 Train Loss: 172557.753863	 Test Loss: 174557.410185
+Time taken: 6169.05 seconds
+Epoch: 39 	 Train Loss: 166344.404502	 Test Loss: 171718.044753
+Time taken: 7701.99 seconds
+Epoch: 49 	 Train Loss: 161666.036894	 Test Loss: 164752.473302
+Time taken: 9233.43 seconds
+Epoch: 59 	 Train Loss: 157419.829648	 Test Loss: 169983.573765
+Time taken: 10748.38 seconds
+Epoch: 69 	 Train Loss: 156382.982286	 Test Loss: 169606.990278
+Time taken: 12279.04 seconds
+Epoch: 79 	 Train Loss: 156733.517315	 Test Loss: 167232.802623
+Time taken: 13818.18 seconds
+Epoch: 89 	 Train Loss: 156004.586574	 Test Loss: 169818.178704
+Time taken: 15311.18 seconds
+Epoch: 99 	 Train Loss: 155643.592968	 Test Loss: 171015.577469
+Time taken: 16799.74 seconds
+Epoch: 109 	 Train Loss: 155500.963772	 Test Loss: 167776.881019
+Time taken: 18268.14 seconds
+Epoch: 119 	 Train Loss: 156268.025972	 Test Loss: 169280.789660
+Time taken: 19747.32 seconds
+Epoch: 129 	 Train Loss: 155927.058471	 Test Loss: 167465.643981
+Time taken: 21263.02 seconds
+Epoch: 139 	 Train Loss: 155928.381859	 Test Loss: 166654.661111
+Time taken: 22775.35 seconds
+Epoch: 149 	 Train Loss: 155533.566196	 Test Loss: 170436.678858
+Finished training
+Time taken: 22775.35 seconds
+Best test loss: 164752.473302 at epoch: 49
+Video loss: 154639.278086 at epoch: 49
+Timeseries MAPE: 0.000000
+Video MAPE: 5.345517
+Started
+Traceback (most recent call last):
+  File "run_MVAE.py", line 525, in <module>
+    run_clustering(model_arg, latent_dim, hidden_layers)
+  File "/work6/a_sundfjord/thesis/feature_extraction/clustering.py", line 215, in run_clustering
+    latents, labels, model_name = get_latent(model, latent_dim, hidden_layers, split_size)
+  File "/work6/a_sundfjord/thesis/feature_extraction/clustering.py", line 147, in get_latent
+    model = model(input_dims= [(64 // split_size, 128, 128, 3), (200 // split_size, 352)], latent_dim=latent_dim, 
+TypeError: unsupported operand type(s) for //: 'int' and 'NoneType'

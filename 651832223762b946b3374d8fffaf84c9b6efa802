@@ -1,0 +1,29 @@
+[33mcommit 651832223762b946b3374d8fffaf84c9b6efa802[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m)[m
+Author: andreassundfjord <andreas@sundfjord.no>
+Date:   Tue May 9 19:24:22 2023 +0900
+
+    remove big file
+
+[33mcommit 18cf6fcc2967897cda41d0c712ed3384f201d98b[m
+Author: andreassundfjord <andreas@sundfjord.no>
+Date:   Tue May 9 19:21:32 2023 +0900
+
+    fixed full run bug
+
+[33mcommit 51aa5f7028b7f9be10ebed3676cf25310f7978ce[m
+Author: andreassundfjord <andreas@sundfjord.no>
+Date:   Tue May 9 18:55:33 2023 +0900
+
+    progress maybe
+
+[33mcommit dc5c60d9e795ab6000f72c525defd09f79d94cfd[m
+Author: andreassundfjord <andreas@sundfjord.no>
+Date:   Tue May 9 11:35:17 2023 +0900
+
+    full test fix
+
+[33mcommit 3d4166e88f8c6bfbb231d645829b909bac5bfa79[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: andreassundfjord <andreas@sundfjord.no>
+Date:   Mon May 8 15:30:00 2023 +0900
+
+    testing setup

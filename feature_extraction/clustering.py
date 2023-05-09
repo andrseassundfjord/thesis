@@ -32,9 +32,9 @@ def run_cluster(X, y, K = 14, norm = True, savename = "model"):
         X = (X - X.mean(dim=0)) / X.std(dim=0)
 
     with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", message="Exited postprocessing with accuracies")
-        warnings.filterwarnings("ignore","Exited at iteration 383 with accuracies")
-        warnings.filterwarnings("ignore", "Graph is not fully connected, spectral embedding may not work as expected.")
+        #warnings.filterwarnings("ignore", message="Exited postprocessing with accuracies")
+        #warnings.filterwarnings("ignore","Exited at iteration 383 with accuracies")
+        #warnings.filterwarnings("ignore", "Graph is not fully connected, spectral embedding may not work as expected.")
         # Perform K-means clustering
         kmeans = KMeans(n_clusters=K, random_state=42, n_init=10).fit(X)
         spectral = SpectralClustering(n_clusters=K, assign_labels='kmeans', n_init=10, random_state=42).fit(X)
@@ -141,17 +141,18 @@ def prep_timeseries(timeseries):
             timeseries[idx] = F.normalize(t, p=1, dim=1)
     return timeseries
 
-def get_latent(model):
+def get_latent(model, latent_dim, hidden_layers, split_size = 1):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    # Get arguments from file
     # Define the model architecture
-    model = model(input_dims= [(64, 128, 128, 3), (200, 352)], latent_dim=32, 
-                    hidden_layers = [[128, 256, 512, 512], 256, 3], dropout= 0.2).to(device)
-
+    model = model(input_dims= [(64 // split_size, 128, 128, 3), (200 // split_size, 352)], latent_dim=latent_dim, 
+                    hidden_layers = hidden_layers, dropout = 0.2).to(device)
     model_name = model.__class__.__name__
 
     # Load the model state
-    model.load_state_dict(torch.load(f'models/{model_name}_state.pth'))
+    if split_size > 1:
+        model.load_state_dict(torch.load(f'augmented_models/{model_name}_state.pth'))
+    else:
+        model.load_state_dict(torch.load(f'models/{model_name}_state.pth'))
 
     # Set the model to evaluation mode
 
@@ -168,29 +169,38 @@ def get_latent(model):
     
     model.eval()
     for video, timeseries, label in zip(video_test_loader, timeseries_test_loader, label_test):
+        video_slices = torch.split(video, video.size(2) // split_size, dim=2)
+        timeseries_slices = [[] for _ in range(split_size)]
+        for t in timeseries:
+            split_t = torch.split(t, t.size(1) // split_size, dim = 1)
+            for idx, split in enumerate(split_t):
+                timeseries_slices[idx].append(split)
         with torch.no_grad():
-            if "Video" in model_name:
-                video = video.to(device)
-                if "VAE" in model_name:
-                    recon_video, kl_divergence, latent_representation, mus = model(video)
+            for i in range(split_size):
+                video = video_slices[i]
+                timeseries = timeseries_slices[i]
+                if "Video" in model_name:
+                    video = video.to(device)
+                    if "VAE" in model_name:
+                        recon_video, kl_divergence, latent_representation, mus = model(video)
+                        latent = mus.to("cpu")
+                    else: 
+                        recon_video, latent_representation = model(video)
+                        latent = latent_representation.to("cpu")
+                elif "M" in model_name:
+                    video = video.to(device)
+                    timeseries = [t.to(device) for t in timeseries]
+                    timeseries = prep_timeseries(timeseries)
+                    recon_video, recon_timeseries, kl_divergence, latent_representation, mus = model([video, timeseries])
                     latent = mus.to("cpu")
-                else: 
-                    recon_video, latent_representation = model(video)
-                    latent = latent_representation.to("cpu")
-            elif "M" in model_name:
-                video = video.to(device)
-                timeseries = [t.to(device) for t in timeseries]
-                timeseries = prep_timeseries(timeseries)
-                recon_video, recon_timeseries, kl_divergence, latent_representation, mus = model([video, timeseries])
-                latent = mus.to("cpu")
-            else:
-                timeseries = [t.to(device) for t in timeseries]
-                timeseries = prep_timeseries(timeseries)
-                recon_timeseries, kl_divergence, latent_representation, mus = model(timeseries)
-                latent = mus.to("cpu")
-            
-            latents.append(latent)
-            labels.append(label)
+                else:
+                    timeseries = [t.to(device) for t in timeseries]
+                    timeseries = prep_timeseries(timeseries)
+                    recon_timeseries, kl_divergence, latent_representation, mus = model(timeseries)
+                    latent = mus.to("cpu")
+                
+                latents.append(latent)
+                labels.append(label)
 
     latents = torch.cat(latents, dim = 0)
     flattened_labels = []
@@ -199,9 +209,9 @@ def get_latent(model):
             flattened_labels.append(label)
     return latents, flattened_labels, model_name
 
-def run(model):
+def run_clustering(model, latent_dim, hidden_layers, split_size = 1):
     print("Started")
-    latents, labels, model_name = get_latent(model)
+    latents, labels, model_name = get_latent(model, latent_dim, hidden_layers, split_size)
     print("Latent representations ready")
     for i in range(2, 15):
         print("\nCluster ", i, flush = True)
@@ -212,4 +222,9 @@ if __name__ == "__main__":
     print("Run Cluster")
     torch.manual_seed(42)
     np.random.seed(42)
-    run(VideoAutoencoder)
+    latent_dim = 512
+    video_hidden_shape = [128, 256, 512, 512]
+    timeseries_hidden_dim = 1024
+    timeseries_num_layers = 3
+    hidden_layers = [video_hidden_shape, timeseries_hidden_dim, timeseries_num_layers]
+    run_clustering(VideoAutoencoder, latent_dim, hidden_layers, split_size = 4)

@@ -14,7 +14,7 @@ class HMAE(nn.Module):
         self.hidden_shape = hidden_layers[0]
         self.hidden_dim = hidden_layers[1]
         self.num_hidden_layers = hidden_layers[2]
-        embedding_dim = 8
+        embedding_dim = 4
         # Video
         self.video_encoder = VideoEncoder(latent_dim = latent_dim, 
                                             input_shape = self.video_input_shape, 
