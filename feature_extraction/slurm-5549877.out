@@ -1,0 +1,14 @@
+Started: MAE_augmented, Augmented run
+Using device: cuda
+Model: MAE
+Number of parameters in model:  316759871
+torch.cuda.memory_allocated: 1.185101GB
+torch.cuda.memory_reserved: 1.208984GB
+torch.cuda.max_memory_reserved: 1.208984GB
+Start training
+Time taken: 1338.35 seconds
+Epoch: 9 	 Train Loss: 56559.338572	 Test Loss: 44423.395872
+Time taken: 2637.68 seconds
+Epoch: 19 	 Train Loss: 43506.948688	 Test Loss: 35504.457099
+Time taken: 3930.04 seconds
+Epoch: 29 	 Train Loss: 40270.103889	 Test Loss: 34521.646682

@@ -21,6 +21,7 @@ import math
 import copy
 from torch.cuda.amp import GradScaler, autocast
 from sklearn.cluster import KMeans
+<<<<<<< HEAD
 from clustering import run_clustering
 from classification import train_test_classification
 from risk_prediction import train_test_risk
@@ -34,6 +35,12 @@ def mape_calc(y_true, y_pred):
     perc_error[torch.isinf(perc_error)] = 0  # Handle divide by zero errors
     mean_perc_error = 100.0 * torch.mean(perc_error)
     return mean_perc_error
+=======
+from sklearn.metrics import mean_absolute_percentage_error
+from clustering import run_cluster
+from classification import train_test_classification
+from risk_prediction import train_test_risk
+>>>>>>> 3d4166e88f8c6bfbb231d645829b909bac5bfa79
 
 def generate_random(x, p=0.5):
     scaled_x = (x - 1) / 29 # 29 = 30 - 1, max number of features
@@ -247,6 +254,7 @@ def run(
                 recon_video, recon_timeseries, kl_divergence, latent_representation, mus = model((video, timeseries_input))
                 loss = kl_divergence + reconstruction_loss(recon_video, video)
                 recon_split = []
+                print(recon_timeseries[0].size(), recon_timeseries[1].size(), recon_timeseries[2].size())
                 recon_split.extend(torch.split(recon_timeseries[0], [t.size(2) for t in timeseries[:3]], dim=-1))
                 recon_split.extend(torch.split(recon_timeseries[1], [t.size(2) for t in timeseries[3:5]], dim=-1))
                 recon_split.extend(torch.split(recon_timeseries[2], [t.size(2) for t in timeseries[5:]], dim=-1))
@@ -281,7 +289,11 @@ def run(
                     loss += kl_divergence
                     loss += reg_loss(model)
                     loss += kmeans_loss(mus)
+<<<<<<< HEAD
                     mape_video += mape_calc(y_true=video, y_pred=recon_video)
+=======
+                    mape_video += mean_absolute_percentage_error(y_true=video.to("cpu"), y_pred=recon_video.to("cpu"))
+>>>>>>> 3d4166e88f8c6bfbb231d645829b909bac5bfa79
                 elif model.__class__.__name__ == "TimeseriesVAE":
                     # Move data to device
                     timeseries = [t.to(device) for t in timeseries]
@@ -308,7 +320,11 @@ def run(
                     recon_split.extend(torch.split(recon_timeseries[2], [t.size(2) for t in timeseries[5:]], dim=-1))
                     for recon, nan_mask, t in zip(recon_split, masks, timeseries):
                         loss += reconstruction_loss(recon[~nan_mask], t[~nan_mask])
+<<<<<<< HEAD
                         mape_time += mape_calc(y_true=t[~nan_mask], y_pred=recon[~nan_mask]) / 8
+=======
+                        mape_time += mean_absolute_percentage_error(y_true=t[~nan_mask].to("cpu"), y_pred=recon[~nan_mask].to("cpu")) / 8
+>>>>>>> 3d4166e88f8c6bfbb231d645829b909bac5bfa79
                     test_time_loss += loss.item()
                     loss += kl_divergence
                     loss += reg_loss(model)
@@ -346,7 +362,11 @@ def run(
                     test_video_loss += loss.item()
                     loss += reg_loss(model)
                     loss += kmeans_loss(latent_representation)
+<<<<<<< HEAD
                     mape_video += mape_calc(y_true=video, y_pred=reconstructed)
+=======
+                    mape_video += mean_absolute_percentage_error(y_true=video.to("cpu"), y_pred=reconstructed.to("cpu"))
+>>>>>>> 3d4166e88f8c6bfbb231d645829b909bac5bfa79
                 else:
                     # Move data to device
                     video = video.to(device)
@@ -378,8 +398,13 @@ def run(
                     time_loss = 0
                     for recon, nan_mask, t in zip(recon_split, masks, timeseries):
                         time_loss += reconstruction_loss(recon[~nan_mask], t[~nan_mask])
+<<<<<<< HEAD
                         mape_time += mape_calc(y_true=t[~nan_mask], y_pred=recon[~nan_mask]) / 8
                     mape_video += mape_calc(y_true=video, y_pred=recon_video)
+=======
+                        mape_time += mean_absolute_percentage_error(y_true=t[~nan_mask].to("cpu"), y_pred=recon[~nan_mask].to("cpu")) / 8
+                    mape_video += mean_absolute_percentage_error(y_true=video.to("cpu"), y_pred=recon_video.to("cpu"))
+>>>>>>> 3d4166e88f8c6bfbb231d645829b909bac5bfa79
                     loss = kl_divergence + video_loss + time_loss
                     loss += kmeans_loss(mus)
                     test_time_loss += time_loss.item()
@@ -499,7 +524,11 @@ def plot_num_frames(num_frames):
     plt.savefig("results/frame_stats_log")
 
 if __name__ == "__main__":
+<<<<<<< HEAD
     model_arg = MVAE
+=======
+    model_arg = VideoBERT_pretrained
+>>>>>>> 3d4166e88f8c6bfbb231d645829b909bac5bfa79
     latent_dim = 512
     video_hidden_shape = [128, 256, 512, 512]
     timeseries_hidden_dim = 1024
@@ -507,7 +536,11 @@ if __name__ == "__main__":
     hidden_layers = [video_hidden_shape, timeseries_hidden_dim, timeseries_num_layers]
 
     run(
+<<<<<<< HEAD
         "MVAE_full",
+=======
+        "VideoBERT_pretrained",
+>>>>>>> 3d4166e88f8c6bfbb231d645829b909bac5bfa79
         load = False,
         train_ratio = 0.7,
         batch_size = 32,
@@ -524,6 +557,10 @@ if __name__ == "__main__":
         pretrain = True
     )
 
+<<<<<<< HEAD
     run_clustering(model_arg, latent_dim, hidden_layers)
+=======
+    run_cluster(model_arg, latent_dim, hidden_layers)
+>>>>>>> 3d4166e88f8c6bfbb231d645829b909bac5bfa79
     train_test_classification(model_arg, epochs=40, lr=0.1, latent_dim=latent_dim, hidden_dim=512, hidden_layers=hidden_layers)
     train_test_risk(model_arg, epochs=40, lr=0.1, latent_dim=latent_dim, hidden_dim=512, hidden_layers=hidden_layers)

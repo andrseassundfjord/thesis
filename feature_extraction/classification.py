@@ -64,11 +64,20 @@ def prep_timeseries(timeseries):
             timeseries[idx] = F.normalize(t, p=1, dim=1)
     return timeseries
 
+<<<<<<< HEAD
 def train_test_classification(model, epochs = 100, lr = 0.1, latent_dim = 32, hidden_dim = 512, hidden_layers = [[128, 256, 512, 512], 256, 3], split_size = 1):
+=======
+def train_test_classification(model, epochs = 100, lr = 0.1, latent_dim = 32, hidden_dim = 512, hidden_layers = [[128, 256, 512, 512], 256, 3]):
+>>>>>>> 3d4166e88f8c6bfbb231d645829b909bac5bfa79
     print("\nStart classification fine-tuning")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # Define the model architecture
+<<<<<<< HEAD
     pretrained_model = model(input_dims= [(64 // split_size, 128, 128, 3), (200 // split_size, 352)], latent_dim=latent_dim, 
+=======
+
+    pretrained_model = model(input_dims= [(64, 128, 128, 3), (200, 352)], latent_dim=latent_dim, 
+>>>>>>> 3d4166e88f8c6bfbb231d645829b909bac5bfa79
                     hidden_layers = hidden_layers, dropout= 0.2).to(device)
 
     model_name = pretrained_model.__class__.__name__

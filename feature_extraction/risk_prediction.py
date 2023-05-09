@@ -55,11 +55,19 @@ def prep_timeseries(timeseries):
             timeseries[idx] = F.normalize(t, p=1, dim=1)
     return timeseries
 
+<<<<<<< HEAD
 def train_test_risk(model, epochs = 100, lr = 0.01, latent_dim = 32, hidden_dim = 512, hidden_layers = [[128, 256, 512, 512], 256, 3], split_size = 1):
+=======
+def train_test_risk(model, epochs = 100, lr = 0.01, latent_dim = 32, hidden_dim = 512, hidden_layers = [[128, 256, 512, 512], 256, 3]):
+>>>>>>> 3d4166e88f8c6bfbb231d645829b909bac5bfa79
     print("\nStart risk score fine-tuning")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # Define the model architecture
+<<<<<<< HEAD
     pretrained_model = model(input_dims= [(64 // split_size, 128, 128, 3), (200 // split_size, 352)], latent_dim=latent_dim, 
+=======
+    pretrained_model = model(input_dims= [(64, 128, 128, 3), (200, 352)], latent_dim=latent_dim, 
+>>>>>>> 3d4166e88f8c6bfbb231d645829b909bac5bfa79
                     hidden_layers = hidden_layers, dropout= 0.2).to(device)
 
     model_name = pretrained_model.__class__.__name__
@@ -83,6 +91,11 @@ def train_test_risk(model, epochs = 100, lr = 0.01, latent_dim = 32, hidden_dim 
 
     # LR scheduler
     scheduler = ReduceLROnPlateau(optimizer, factor=0.1, patience=5) # Recude lr by factor after patience epochs
+<<<<<<< HEAD
+=======
+    #scheduler = CosineAnnealingLR(optimizer, T_max=num_epochs)
+    #scheduler = StepLR(optimizer, step_size=int(num_epochs/4), gamma=0.1)
+>>>>>>> 3d4166e88f8c6bfbb231d645829b909bac5bfa79
 
     video_train_loader, video_test_loader, timeseries_train_loader, timeseries_test_loader, label_train, label_test, risk_train, risk_test = get_dataloaders(
                                                 '/work5/share/NEDO/nedo-2019/data/processed_rosbags_topickles/fixed_pickles', 
@@ -106,6 +119,7 @@ def train_test_risk(model, epochs = 100, lr = 0.01, latent_dim = 32, hidden_dim 
             loss = 0
             optimizer.zero_grad()
             riskScore = torch.tensor([float(r) for r in riskScore]).to(device)
+<<<<<<< HEAD
             video_slices = torch.split(video, video.size(2) // split_size, dim=2)
             timeseries_slices = [[] for _ in range(split_size)]
             for t in timeseries:
@@ -115,6 +129,45 @@ def train_test_risk(model, epochs = 100, lr = 0.01, latent_dim = 32, hidden_dim 
             for i in range(split_size):
                 video = video_slices[i]
                 timeseries = timeseries_slices[i]
+=======
+            if "Video" in model_name:
+                video = video.to(device)
+                if "VAE" in model_name:
+                    recon_video, kl_divergence, latent_representation, mus = pretrained_model(video)
+                    latent = mus
+                else: 
+                    recon_video, latent_representation = pretrained_model(video)
+                    latent = latent_representation
+            elif "M" in model_name:
+                video = video.to(device)
+                timeseries = [t.to(device) for t in timeseries]
+                timeseries = prep_timeseries(timeseries)
+                recon_video, recon_timeseries, kl_divergence, latent_representation, mus = pretrained_model([video, timeseries])
+                latent = mus
+            else:
+                timeseries = [t.to(device) for t in timeseries]
+                timeseries = prep_timeseries(timeseries)
+                recon_timeseries, kl_divergence, latent_representation, mus = pretrained_model(timeseries)
+                latent = mus
+            
+            output = simple_model(latent)
+            loss = criterion(output, riskScore)
+            loss += reg_loss(simple_model)
+            
+            train_loss += loss.item()
+            loss.backward()
+            optimizer.step()
+
+        train_loss /= len(video_train_loader.dataset)
+        train_losses.append(train_loss)
+        # Test
+        pretrained_model.eval()
+        simple_model.eval()
+        test_loss = 0
+        with torch.no_grad():
+            for video, timeseries, riskScore in zip(video_test_loader, timeseries_test_loader, risk_test):
+                riskScore = torch.tensor([float(r) for r in riskScore]).to(device)
+>>>>>>> 3d4166e88f8c6bfbb231d645829b909bac5bfa79
                 if "Video" in model_name:
                     video = video.to(device)
                     if "VAE" in model_name:
@@ -136,6 +189,7 @@ def train_test_risk(model, epochs = 100, lr = 0.01, latent_dim = 32, hidden_dim 
                     latent = mus
             
                 output = simple_model(latent)
+<<<<<<< HEAD
                 loss += criterion(output, riskScore)
             loss += reg_loss(simple_model)
             
@@ -184,12 +238,20 @@ def train_test_risk(model, epochs = 100, lr = 0.01, latent_dim = 32, hidden_dim 
                     
                     output = simple_model(latent)
                     loss += criterion(output, riskScore)
+=======
+                loss = criterion(output, riskScore)
+>>>>>>> 3d4166e88f8c6bfbb231d645829b909bac5bfa79
                 loss += reg_loss(simple_model)
                 test_loss += loss.item()
         # lr schedule step
         scheduler.step(test_loss) # For plateau
+<<<<<<< HEAD
 
         test_loss /= (len(video_test_loader.dataset) * split_size)
+=======
+        #scheduler.step() # for other
+        test_loss /= len(video_test_loader.dataset)
+>>>>>>> 3d4166e88f8c6bfbb231d645829b909bac5bfa79
         test_losses.append(test_loss)
         if test_loss < best_val_loss:
             best_val_loss = test_loss
@@ -206,17 +268,27 @@ def train_test_risk(model, epochs = 100, lr = 0.01, latent_dim = 32, hidden_dim 
     print(f"Finished training {model_name} for risk score prediction")
     print(f"Best test loss: {best_val_loss:.6f} at epoch: {best_val_loss_epoch}")
 
+<<<<<<< HEAD
     evaluate(pretrained_model, model_name, latent_dim, hidden_dim, split_size)
 
 def evaluate(pretrained_model, model_name, latent_dim, hidden_dim, split_size = 1):
+=======
+    evaluate(pretrained_model, model_name, latent_dim, hidden_dim)
+
+def evaluate(pretrained_model, model_name, latent_dim, hidden_dim):
+>>>>>>> 3d4166e88f8c6bfbb231d645829b909bac5bfa79
     print("Start evaluation", flush = True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # load simple model
     simple_model = SimpleModel(latent_dim, hidden_dim).to(device)
+<<<<<<< HEAD
     if split_size > 1:
         simple_model.load_state_dict(torch.load(f'augmented_models/{model_name}_risk_state.pth'))
     else:
         simple_model.load_state_dict(torch.load(f'models/{model_name}_risk_state.pth'))
+=======
+    simple_model.load_state_dict(torch.load(f'models/{model_name}_risk_state.pth'))
+>>>>>>> 3d4166e88f8c6bfbb231d645829b909bac5bfa79
     # Load dataloaders
     video_train_loader, video_test_loader, timeseries_train_loader, timeseries_test_loader, label_train, label_test, risk_train, risk_test = get_dataloaders(
                                                 '/work5/share/NEDO/nedo-2019/data/processed_rosbags_topickles/fixed_pickles', 

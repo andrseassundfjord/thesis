@@ -141,11 +141,21 @@ def prep_timeseries(timeseries):
             timeseries[idx] = F.normalize(t, p=1, dim=1)
     return timeseries
 
+<<<<<<< HEAD
 def get_latent(model, latent_dim, hidden_layers, split_size = 1):
+=======
+def get_latent(model, latent_dim, hidden_layers):
+>>>>>>> 3d4166e88f8c6bfbb231d645829b909bac5bfa79
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # Define the model architecture
+<<<<<<< HEAD
     model = model(input_dims= [(64 // split_size, 128, 128, 3), (200 // split_size, 352)], latent_dim=latent_dim, 
                     hidden_layers = hidden_layers, dropout = 0.2).to(device)
+=======
+    model = model(input_dims= [(64, 128, 128, 3), (200, 352)], latent_dim=latent_dim, 
+                    hidden_layers = hidden_layers, dropout= 0.2).to(device)
+
+>>>>>>> 3d4166e88f8c6bfbb231d645829b909bac5bfa79
     model_name = model.__class__.__name__
 
     # Load the model state
@@ -209,9 +219,15 @@ def get_latent(model, latent_dim, hidden_layers, split_size = 1):
             flattened_labels.append(label)
     return latents, flattened_labels, model_name
 
+<<<<<<< HEAD
 def run_clustering(model, latent_dim, hidden_layers, split_size = 1):
     print("Started")
     latents, labels, model_name = get_latent(model, latent_dim, hidden_layers, split_size)
+=======
+def run_cluster(model, latent_dim, hidden_layers):
+    print("Started")
+    latents, labels, model_name = get_latent(model, latent_dim, hidden_layers)
+>>>>>>> 3d4166e88f8c6bfbb231d645829b909bac5bfa79
     print("Latent representations ready")
     for i in range(2, 15):
         print("\nCluster ", i, flush = True)
@@ -222,9 +238,13 @@ if __name__ == "__main__":
     print("Run Cluster")
     torch.manual_seed(42)
     np.random.seed(42)
+<<<<<<< HEAD
     latent_dim = 512
     video_hidden_shape = [128, 256, 512, 512]
     timeseries_hidden_dim = 1024
     timeseries_num_layers = 3
     hidden_layers = [video_hidden_shape, timeseries_hidden_dim, timeseries_num_layers]
     run_clustering(VideoAutoencoder, latent_dim, hidden_layers, split_size = 4)
+=======
+    run_cluster(VideoAutoencoder)
+>>>>>>> 3d4166e88f8c6bfbb231d645829b909bac5bfa79

@@ -76,6 +76,7 @@ TimeVAE_inc_all,TimeseriesVAE,15832.733965,520325449336011161600.000000,44860670
 VideoAE_inc_k,VideoAutoencoder,16856.038764,159272.664491,168963.976852,584220745,0.000010,100,32,512,"(64, 128, 128, 3)","(200, 352)","[128, 256, 512, 512]",3,1024,LeakyReLU,0.200000,"dropout, kl div",Adam,ReduceLROnPlateau,"kaiminghe_uniform, xavier for lstm",None,Yes,
 VideoVAE_inc_k,VideoVAE,16845.562431,188953.334843,179120.160340,584483401,0.000010,100,32,512,"(64, 128, 128, 3)","(200, 352)","[128, 256, 512, 512]",3,1024,LeakyReLU,0.200000,"dropout, kl div",Adam,ReduceLROnPlateau,"kaiminghe_uniform, xavier for lstm",None,Yes,
 VIDEO_bert_pretrained,VideoBERT,39300.226015,128956.787693,142596.918056,169823497,0.000010,100,32,512,"(64, 128, 128, 3)","(200, 352)","[128, 256, 512, 512]",4,1024,LeakyReLU,0.200000,"dropout, kl div",Adam,ReduceLROnPlateau,"kaiminghe_uniform, xavier for lstm",None,Yes,
+<<<<<<< HEAD
 MAE_augmented,MAE,13090.179317,35741.748302,31539.418904,316759871,0.000010,100,32,32,"(16, 128, 128, 3)","(50, 352)","[128, 256, 512, 512]",3,256,LeakyReLU,0.200000,"dropout, kl div",Adam,ReduceLROnPlateau,"kaiminghe_uniform, xavier for lstm",None,Yes,
 VideAE_full_augmented,VideoAutoencoder,14694.262994,40333.051478,43823.024884,178716265,0.000010,150,32,32,"(16, 128, 128, 3)","(50, 352)","[128, 256, 512, 512]",3,1024,LeakyReLU,0.200000,"dropout, kl div",Adam,ReduceLROnPlateau,"kaiminghe_uniform, xavier for lstm",None,Yes,
 VideoAE_full,VideoAutoencoder,22775.352816,155533.566196,170436.678858,584220745,0.000010,150,32,512,"(64, 128, 128, 3)","(200, 352)","[128, 256, 512, 512]",3,1024,LeakyReLU,0.200000,"dropout, kl div",Adam,ReduceLROnPlateau,"kaiminghe_uniform, xavier for lstm",None,Yes,
@@ -83,3 +84,5 @@ MVAE_augmented,MVAE,27140.236252,32760.077983,31220.520255,709813376,0.000010,15
 VideoVAE_full_no_pretrain,VideoVAE,14526.740538,44533.375533,42576.927701,178732681,0.000010,150,32,32,"(16, 128, 128, 3)","(50, 352)","[128, 256, 512, 512]",3,1024,LeakyReLU,0.200000,"dropout, kl div",Adam,ReduceLROnPlateau,"kaiminghe_uniform, xavier for lstm",None,Yes,
 VideoVAE_full_no_pretrain,VideoVAE,14586.410732,43326.431839,42135.764159,178732681,0.000010,150,32,32,"(16, 128, 128, 3)","(50, 352)","[128, 256, 512, 512]",3,1024,LeakyReLU,0.200000,"dropout, kl div",Adam,ReduceLROnPlateau,"kaiminghe_uniform, xavier for lstm",None,Yes,
 VideoBERT_full,VideoBERT_pretrained,68564.946172,185926.107485,187217.553241,170536649,0.000010,150,32,512,"(64, 128, 128, 3)","(200, 352)","[128, 256, 512, 512]",3,1024,LeakyReLU,0.200000,"dropout, kl div",Adam,ReduceLROnPlateau,"kaiminghe_uniform, xavier for lstm",None,Yes,
+=======
+>>>>>>> 3d4166e88f8c6bfbb231d645829b909bac5bfa79

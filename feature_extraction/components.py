@@ -97,10 +97,15 @@ class VideoEncoderPretrained(nn.Module):
         for param in self.backbone.parameters():
             param.requires_grad = False
 
+<<<<<<< HEAD
         self.fc = nn.Linear(512, self.hs[-1])
 
         self.fc_mu = nn.Linear(self.hs[-1], latent_dim)
         self.fc_log_var = nn.Linear(self.hs[-1], latent_dim)
+=======
+        self.fc_mu = nn.Linear(512, latent_dim)
+        self.fc_log_var = nn.Linear(512, latent_dim)
+>>>>>>> 3d4166e88f8c6bfbb231d645829b909bac5bfa79
 
 
     def reparameterize(self, mu, log_var):
