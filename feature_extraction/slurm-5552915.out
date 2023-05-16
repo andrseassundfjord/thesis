@@ -1,8 +1,0 @@
-Started: VideoAE_full, Augmented run
-Using device: cuda
-Model: VideoAutoencoder
-Number of parameters in model:  290774281
-torch.cuda.memory_allocated: 1.085196GB
-torch.cuda.memory_reserved: 1.089844GB
-torch.cuda.max_memory_reserved: 1.089844GB
-Start training

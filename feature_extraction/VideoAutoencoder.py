@@ -28,18 +28,18 @@ class VideoEncoder(nn.Module):
 
         self.model = nn.ModuleList([
             nn.Conv3d(self.n_channel, self.hs[0], kernel_size = 4, stride = 2, padding = 1),
-            nn.BatchNorm3d(self.hs[0]),
+            #nn.BatchNorm3d(self.hs[0]),
             nn.LeakyReLU(),
             nn.Conv3d(self.hs[0], self.hs[1], kernel_size = 4, stride = 2, padding = 1),
-            nn.BatchNorm3d(self.hs[1]),
+            #nn.BatchNorm3d(self.hs[1]),
             nn.LeakyReLU(),
             nn.Conv3d(self.hs[1], self.hs[2], kernel_size = 4, stride = 2, padding = 1),
-            nn.BatchNorm3d(self.hs[2]),
+            #nn.BatchNorm3d(self.hs[2]),
             nn.LeakyReLU(),
             Flatten(),
             nn.Dropout(dropout),
             nn.Linear(int(self.hs[2] * self.width * self.height * self.n_frames / (8 ** 3)), self.hs[3]),
-            nn.BatchNorm1d(self.hs[3]),
+            #nn.BatchNorm1d(self.hs[3]),
             nn.LeakyReLU()
         ])
         
@@ -112,18 +112,18 @@ class VideoDecoder(nn.Module):
             nn.BatchNorm1d(self.hs[3]),
             nn.ReLU(),
             nn.Linear(self.hs[3], int(self.hs[2] * self.width * self.height * self.n_frames / (8 ** 3))),
-            nn.BatchNorm1d(int(self.hs[2] * self.width * self.height * self.n_frames / (8 ** 3))),
+            #nn.BatchNorm1d(int(self.hs[2] * self.width * self.height * self.n_frames / (8 ** 3))),
             nn.ReLU(),
             nn.Dropout(dropout),
             Reshape((self.hs[2], int(self.n_frames / 8), int(self.width / 8), int(self.height / 8))),
             nn.ConvTranspose3d(self.hs[2], self.hs[1], kernel_size=4, stride=2, padding=1),
-            nn.BatchNorm3d(self.hs[1]),
+            #nn.BatchNorm3d(self.hs[1]),
             nn.ReLU(),
             nn.ConvTranspose3d(self.hs[1], self.hs[0], kernel_size=4, stride=2, padding=1),
-            nn.BatchNorm3d(self.hs[0]),
+            #nn.BatchNorm3d(self.hs[0]),
             nn.ReLU(),
             nn.ConvTranspose3d(self.hs[0], self.n_channel, kernel_size=4, stride=2, padding=1),
-            nn.BatchNorm3d(self.n_channel),
+            #nn.BatchNorm3d(self.n_channel),
             nn.Sigmoid()
         ])
 

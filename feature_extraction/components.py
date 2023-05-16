@@ -31,18 +31,18 @@ class VideoEncoder(nn.Module):
 
         self.model = nn.ModuleList([
             nn.Conv3d(self.n_channel, self.hs[0], kernel_size = 4, stride = 2, padding = 1),
-            nn.BatchNorm3d(self.hs[0]),
+            #nn.BatchNorm3d(self.hs[0]),
             nn.LeakyReLU(),
             nn.Conv3d(self.hs[0], self.hs[1], kernel_size = 4, stride = 2, padding = 1),
-            nn.BatchNorm3d(self.hs[1]),
+            #nn.BatchNorm3d(self.hs[1]),
             nn.LeakyReLU(),
             nn.Conv3d(self.hs[1], self.hs[2], kernel_size = 4, stride = 2, padding = 1),
-            nn.BatchNorm3d(self.hs[2]),
+            #nn.BatchNorm3d(self.hs[2]),
             nn.LeakyReLU(),
             Flatten(),
             nn.Dropout(dropout),
             nn.Linear(int(self.hs[2] * self.width * self.height * self.n_frames / (8 ** 3)), self.hs[3]),
-            nn.BatchNorm1d(self.hs[3]),
+            #nn.BatchNorm1d(self.hs[3]),
             nn.LeakyReLU()
         ])
         
@@ -97,15 +97,10 @@ class VideoEncoderPretrained(nn.Module):
         for param in self.backbone.parameters():
             param.requires_grad = False
 
-<<<<<<< HEAD
         self.fc = nn.Linear(512, self.hs[-1])
 
         self.fc_mu = nn.Linear(self.hs[-1], latent_dim)
         self.fc_log_var = nn.Linear(self.hs[-1], latent_dim)
-=======
-        self.fc_mu = nn.Linear(512, latent_dim)
-        self.fc_log_var = nn.Linear(512, latent_dim)
->>>>>>> 3d4166e88f8c6bfbb231d645829b909bac5bfa79
 
 
     def reparameterize(self, mu, log_var):
@@ -135,21 +130,21 @@ class VideoDecoder(nn.Module):
 
         self.model = nn.ModuleList([
             nn.Linear(latent_dim, self.hs[3]),
-            nn.BatchNorm1d(self.hs[3]),
+            #nn.BatchNorm1d(self.hs[3]),
             nn.LeakyReLU(),
             nn.Linear(self.hs[3], int(self.hs[2] * self.width * self.height * self.n_frames / (8 ** 3))),
-            nn.BatchNorm1d(int(self.hs[2] * self.width * self.height * self.n_frames / (8 ** 3))),
+            #nn.BatchNorm1d(int(self.hs[2] * self.width * self.height * self.n_frames / (8 ** 3))),
             nn.LeakyReLU(),
             nn.Dropout(dropout),
             Reshape((self.hs[2], int(self.n_frames / 8), int(self.width / 8), int(self.height / 8))),
             nn.ConvTranspose3d(self.hs[2], self.hs[1], kernel_size=4, stride=2, padding=1),
-            nn.BatchNorm3d(self.hs[1]),
+            #nn.BatchNorm3d(self.hs[1]),
             nn.LeakyReLU(),
             nn.ConvTranspose3d(self.hs[1], self.hs[0], kernel_size=4, stride=2, padding=1),
-            nn.BatchNorm3d(self.hs[0]),
+            #nn.BatchNorm3d(self.hs[0]),
             nn.LeakyReLU(),
             nn.ConvTranspose3d(self.hs[0], self.n_channel, kernel_size=4, stride=2, padding=1),
-            nn.BatchNorm3d(self.n_channel),
+            #nn.BatchNorm3d(self.n_channel),
             nn.Sigmoid()
         ])
 
@@ -180,6 +175,8 @@ class TimeseriesEncoder(nn.Module):
         self.num_layers = num_layers
         self.categorical_cols = categorical_cols
         self.bidirectional = False
+        self.embedding_dim = embedding_dim
+        self.mask_value = -999
         
         if categorical_cols is not None:
             self.embeddings = nn.ModuleList([nn.Embedding(num_embeddings=num_cardinals, embedding_dim=embedding_dim)
@@ -206,7 +203,11 @@ class TimeseriesEncoder(nn.Module):
         cat_inp1: categorical variables with 1 and 0 as possible values
         cat_inp2: categorical variables with more than two possible values
         """
-        if x.size(2) == 1:
+        if len(x.size()) == 2:
+            print(f"Unexpected input dimensions: {x.size()}")
+            zeros = torch.zeros(x.size(0), self.latent_dim).to("cuda" if torch.cuda.is_available() else "cpu")
+            return zeros, zeros, zeros            
+        elif x.size(2) == 1:
             print("Unexpected value in TimeseriesVAE encoder input: ", x.size(), ", expected: ", self.input_dim)
             zeros = torch.zeros(x.size(0), self.latent_dim).to("cuda" if torch.cuda.is_available() else "cpu")
             return zeros, zeros, zeros
@@ -217,11 +218,20 @@ class TimeseriesEncoder(nn.Module):
                     cat_input = cat_inp2[:, :, i].long()
                 else: 
                     cat_input = cat_inp2.long()
-                if torch.max(cat_input).item() >= self.categorical_cols[i] or torch.min(cat_input).item() < 0:
+                if torch.max(cat_input).item() >= self.categorical_cols[i]:
                     print("Max value is greater or equal to embedding size, components.py line 168")
                     print(f"Max value: {torch.max(cat_input).item()}, Min value: {torch.min(cat_input).item()}, embedding size: {self.categorical_cols[i]}")
                     print(f"Number of categorical2 features: {len(self.categorical_cols)}, i: {i}", flush = True)
-                cat_inputs.append(self.embeddings[i](cat_input))
+                if torch.min(cat_input).item() < 0:
+                    mask = cat_input.eq(self.mask_value)
+                    cat_input[mask] = 0.0
+                    cat_input = self.embeddings[i](cat_input)
+                    mask = mask.unsqueeze(2)
+                    mask = torch.repeat_interleave(mask, self.embedding_dim, dim = -1)
+                    cat_input[mask] = self.mask_value
+                    cat_inputs.append(cat_input)
+                else:
+                    cat_inputs.append(self.embeddings[i](cat_input))
             cat_inputs = torch.cat(cat_inputs, dim=-1)
             if cat_inp1 is not None:
                 if len(cat_inp1.size()) < 3: 
@@ -257,16 +267,15 @@ class TimeseriesDecoder(nn.Module):
         self.bidirectional = False
         seq_len = output_shape[0]
         
-        if self.categorical_cols is not None:
-            self.embeddings = nn.ModuleList([nn.Embedding(num_cardinals, self.embedding_dim) for num_cardinals in self.categorical_cols])
-            self.input_dim = self.latent_dim + self.embedding_dim * len(self.categorical_cols)
-        else:
-            self.input_dim = self.latent_dim
+        #if self.categorical_cols is not None:
+        #    self.embeddings = nn.ModuleList([nn.Embedding(num_cardinals, self.embedding_dim) for num_cardinals in self.categorical_cols])
+        #    self.input_dim = self.latent_dim + self.embedding_dim * len(self.categorical_cols)
+        #else:
+        self.input_dim = self.latent_dim
         # Define layers
         self.fc1 = nn.Linear(self.input_dim, hidden_dim)
         self.leaky = nn.LeakyReLU()
         self.relu = nn.ReLU()
-        #self.lstm = nn.LSTM(hidden_dim, hidden_dim, num_layers=num_layers, batch_first=True, dropout = dropout, bidirectional = self.bidirectional)
         self.gru = nn.GRU(hidden_dim, hidden_dim, num_layers=num_layers, batch_first=True, dropout = dropout, bidirectional = self.bidirectional)
         bidir = 2 if self.bidirectional else 1
         self.fc3 = nn.Linear(hidden_dim * bidir, output_shape[1])
@@ -279,6 +288,7 @@ class TimeseriesDecoder(nn.Module):
     def forward(self, z, categorical_input=None):
         batch_size = z.size(0)
         seq_len = self.output_shape[0]
+        """
         if categorical_input is not None:
             categorical_embeddings = []
             for i, num_cardinals in enumerate(self.categorical_cols):
@@ -292,12 +302,11 @@ class TimeseriesDecoder(nn.Module):
                     print(f"Number of categorical2 features: {len(self.categorical_cols)}, i: {i}", flush = True)
                 categorical_embeddings.append(self.embeddings[i](inp))
             categorical_embeddings = torch.cat(categorical_embeddings, dim = -1)
-            z = z.view(batch_size, 1, z.size(1))
-            z = z.repeat(1, seq_len, 1)
             z = torch.cat([z, categorical_embeddings], dim=-1)
-        
+        """
+        z = z.view(batch_size, 1, z.size(1))
+        z = z.repeat(1, seq_len, 1)
         z = self.leaky(self.fc1(z))
-        #lstm_out, _ = self.lstm(z)
         lstm_out, _ = self.gru(z)
         lstm_out = self.bn(lstm_out)
         output = self.relu(self.fc3(lstm_out))

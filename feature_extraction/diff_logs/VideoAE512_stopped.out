@@ -1,0 +1,83 @@
+Latent dimension: 512, Hidden dimension 1024, Split size 4
+Started: VideoAE512_remove_batchnorm, Augmented run
+Using device: cuda
+Model: VideoAutoencoder
+Number of parameters in model:  290246403
+torch.cuda.memory_allocated: 1.081257GB
+torch.cuda.memory_reserved: 1.085938GB
+torch.cuda.max_memory_reserved: 1.085938GB
+Start training
+Time taken: 1061.26 seconds
+Epoch: 9 	 Train Loss: 115198.286228	 Test Loss: 111446.465278
+Time taken: 2117.73 seconds
+Epoch: 19 	 Train Loss: 97532.083245	 Test Loss: 95756.776852
+Time taken: 3170.92 seconds
+Epoch: 29 	 Train Loss: 92562.606486	 Test Loss: 91134.846605
+Time taken: 4225.32 seconds
+Epoch: 39 	 Train Loss: 89362.607152	 Test Loss: 89268.269830
+Time taken: 5274.24 seconds
+Epoch: 49 	 Train Loss: 86911.974028	 Test Loss: 88947.243287
+Time taken: 6326.41 seconds
+Epoch: 59 	 Train Loss: 84907.094299	 Test Loss: 86806.295756
+Time taken: 7364.80 seconds
+Epoch: 69 	 Train Loss: 83699.575453	 Test Loss: 84828.654167
+Time taken: 8405.57 seconds
+Epoch: 79 	 Train Loss: 83311.565863	 Test Loss: 84246.517670
+Time taken: 9443.42 seconds
+Epoch: 89 	 Train Loss: 81592.051811	 Test Loss: 83369.175000
+Time taken: 10482.51 seconds
+Epoch: 99 	 Train Loss: 80915.272243	 Test Loss: 83660.258565
+Time taken: 11520.49 seconds
+Epoch: 109 	 Train Loss: 80078.260922	 Test Loss: 81455.831713
+Time taken: 12558.99 seconds
+Epoch: 119 	 Train Loss: 78862.239411	 Test Loss: 82620.632022
+Time taken: 13610.95 seconds
+Epoch: 129 	 Train Loss: 78534.563998	 Test Loss: 80418.668750
+Time taken: 14647.10 seconds
+Epoch: 139 	 Train Loss: 77667.550746	 Test Loss: 80559.005247
+Time taken: 15678.19 seconds
+Epoch: 149 	 Train Loss: 76782.814731	 Test Loss: 81422.939660
+Finished training
+Time taken: 15678.19 seconds
+Best test loss: 80174.481944 at epoch: 137
+Video loss: 193329.2158564815, at epoch: 137
+Timeseries MAPE: 0.000000
+Video MAPE: 2.296747
+Started
+Latent representations ready
+
+Cluster  2
+              K-means results      Spectral clustering results       Spectral disc results
+ARI:          -0.00037                    0.00004                  0.00325
+Rand:         0.31366                    0.08248                    0.24999
+FM:           0.24278                    0.28621                    0.26108
+Completeness: 0.03026                    0.33151                    0.10132
+Homogeneity:  0.00535                    0.00036                    0.01390
+V measure:    0.00909                    0.00073                    0.02444
+Silhouette:   0.26473                    0.37870                    0.04907
+CH Score:     794.03688                    4.00744                    15.35621
+
+Cluster  4
+              K-means results      Spectral clustering results       Spectral disc results
+ARI:          0.01763                    0.00005                  0.00282
+Rand:         0.70556                    0.08351                    0.27896
+FM:           0.16417                    0.28603                    0.25471
+Completeness: 0.05109                    0.29533                    0.08591
+Homogeneity:  0.02733                    0.00097                    0.01753
+V measure:    0.03561                    0.00194                    0.02912
+Silhouette:   0.08856                    0.22184                    0.02834
+CH Score:     434.44027                    3.07987                    5.55170
+
+Cluster  6
+              K-means results      Spectral clustering results       Spectral disc results
+ARI:          0.01855                    0.00005                  0.00631
+Rand:         0.75736                    0.08455                    0.37892
+FM:           0.14528                    0.28587                    0.23923
+Completeness: 0.05425                    0.28968                    0.08727
+Homogeneity:  0.03593                    0.00159                    0.02700
+V measure:    0.04323                    0.00317                    0.04124
+Silhouette:   0.05620                    0.16866                    0.02425
+CH Score:     298.80737                    2.76067                    5.17202
+
+Cluster  8
+slurmstepd: error: *** JOB 5555857 ON aventador CANCELLED AT 2023-05-11T11:50:43 ***

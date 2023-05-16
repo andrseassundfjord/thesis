@@ -165,7 +165,6 @@ class MVAE(nn.Module):
         encoded_modalities = encoded_video + encoded_timeseries      
         # Unpack the encoded tensors and compute the Kullback-Leibler divergence loss
         zs, mus, logvars = zip(*encoded_modalities)
-        kl_divergence = -0.5 * torch.sum(1 + torch.stack(logvars) - torch.stack(mus).pow(2) - torch.stack(logvars).exp(), dim=1).mean()
         
         # Compute attention weights
         flattened_modalities = torch.cat(zs, dim=1)
@@ -185,6 +184,16 @@ class MVAE(nn.Module):
         for i, attention_weight in enumerate(attention_weights_mus.split(1, dim=1)):
             weighted_mu += attention_weight * mus[i]
 
+        # Compute attention weights
+        flattened_logvars = torch.cat(logvars, dim=1)
+        attention_weights_logvars = F.softmax(self.attention(flattened_logvars), dim=1)
+
+        # Compute weighted mean of means
+        weighted_logvars = torch.zeros_like(logvars[0])
+        for i, attention_weight in enumerate(attention_weights_logvars.split(1, dim=1)):
+            weighted_logvars += attention_weight * logvars[i]
+
+        kl_divergence = -0.5 * torch.sum(1 + weighted_logvars - weighted_mu.pow(2) - weighted_logvars.exp(), dim=1).mean()
         # Decode latent representation
         decoded_video = self.decodeVideo(weighted_sum)
         decoded_timeseries = self.decodeTimeseries(weighted_sum, modalities[1])

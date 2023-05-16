@@ -1,0 +1,185 @@
+Latent dimension: 64, Hidden dimension 512, Split size 4
+Started: VideoVAE, Augmented run
+Using device: cuda
+Model: VideoVAE
+Number of parameters in model:  178518467
+torch.cuda.memory_allocated: 0.668502GB
+torch.cuda.memory_reserved: 0.691406GB
+torch.cuda.max_memory_reserved: 0.691406GB
+Start training
+Time taken: 1093.89 seconds
+Epoch: 9 	 Train Loss: 220164.663026	 Test Loss: 217757.540741
+Time taken: 2186.27 seconds
+Epoch: 19 	 Train Loss: 191473.206580	 Test Loss: 188542.487963
+Time taken: 3278.16 seconds
+Epoch: 29 	 Train Loss: 165564.989611	 Test Loss: 162713.781173
+Time taken: 4367.07 seconds
+Epoch: 39 	 Train Loss: 151835.294486	 Test Loss: 149927.171451
+Time taken: 5457.01 seconds
+Epoch: 49 	 Train Loss: 145547.404235	 Test Loss: 144726.687809
+Time taken: 6546.45 seconds
+Epoch: 59 	 Train Loss: 141762.283697	 Test Loss: 140755.886728
+Time taken: 7639.00 seconds
+Epoch: 69 	 Train Loss: 138543.477624	 Test Loss: 137417.116821
+Time taken: 8728.21 seconds
+Epoch: 79 	 Train Loss: 135257.914624	 Test Loss: 134939.279630
+Time taken: 9814.52 seconds
+Epoch: 89 	 Train Loss: 133302.575786	 Test Loss: 133060.488272
+Time taken: 10904.23 seconds
+Epoch: 99 	 Train Loss: 130978.351758	 Test Loss: 130875.224228
+Time taken: 11989.18 seconds
+Epoch: 109 	 Train Loss: 129786.771577	 Test Loss: 129575.295988
+Time taken: 13067.32 seconds
+Epoch: 119 	 Train Loss: 129086.668620	 Test Loss: 130179.536111
+Time taken: 14150.55 seconds
+Epoch: 129 	 Train Loss: 127610.795019	 Test Loss: 128554.121296
+Time taken: 15231.22 seconds
+Epoch: 139 	 Train Loss: 126768.420485	 Test Loss: 127576.651389
+Time taken: 16310.91 seconds
+Epoch: 149 	 Train Loss: 125863.008125	 Test Loss: 127250.810802
+Finished training
+Time taken: 16310.91 seconds
+Best test loss: 126725.164969 at epoch: 144
+Video loss: 124988.52353395062, at epoch: 144
+Timeseries MAPE: 0.000000
+Video MAPE: 1.601228
+Started
+Latent representations ready
+
+Cluster  2
+              K-means results      Spectral clustering results
+ARI:          0.00042                    -0.00026
+Rand:         0.35840                    0.31546
+FM:           0.23481                    0.24259 
+Completeness: 0.01651                    0.02568 
+Homogeneity:  0.00332                    0.00456 
+V measure:    0.00553                    0.00774
+Silhouette:   0.47328                    0.48826
+CH Score:     3021.74804                 2828.14582
+
+Cluster  4
+              K-means results      Spectral clustering results
+ARI:          0.00741                    0.00208
+Rand:         0.69842                    0.60978
+FM:           0.15509                    0.17637 
+Completeness: 0.03117                    0.03075 
+Homogeneity:  0.01657                    0.01325 
+V measure:    0.02164                    0.01852
+Silhouette:   0.25186                    0.22423
+CH Score:     2069.34321                 1665.37910
+
+Cluster  6
+              K-means results      Spectral clustering results
+ARI:          0.01053                    0.01086
+Rand:         0.75157                    0.70775
+FM:           0.13900                    0.15573 
+Completeness: 0.03998                    0.04713 
+Homogeneity:  0.02628                    0.02812 
+V measure:    0.03171                    0.03522
+Silhouette:   0.20625                    0.21119
+CH Score:     1584.48917                 1393.48272
+
+Cluster  8
+              K-means results      Spectral clustering results
+ARI:          0.01063                    0.00959
+Rand:         0.80218                    0.71879
+FM:           0.11741                    0.15036 
+Completeness: 0.03879                    0.04609 
+Homogeneity:  0.03052                    0.02961 
+V measure:    0.03416                    0.03605
+Silhouette:   0.16970                    0.16098
+CH Score:     1332.07963                 1025.08933
+
+Cluster  10
+              K-means results      Spectral clustering results
+ARI:          0.01172                    0.00998
+Rand:         0.82570                    0.75251
+FM:           0.10694                    0.13804 
+Completeness: 0.04140                    0.05146 
+Homogeneity:  0.03624                    0.03709 
+V measure:    0.03865                    0.04311
+Silhouette:   0.15809                    0.14614
+CH Score:     1140.61141                 874.70446
+
+Cluster  12
+              K-means results      Spectral clustering results
+ARI:          0.01272                    0.00973
+Rand:         0.84111                    0.71649
+FM:           0.09962                    0.15135 
+Completeness: 0.04528                    0.05961 
+Homogeneity:  0.04288                    0.04160 
+V measure:    0.04404                    0.04900
+Silhouette:   0.13764                    0.13480
+CH Score:     1013.52523                 736.42544
+
+Cluster  14
+              K-means results      Spectral clustering results
+ARI:          0.01480                    0.00977
+Rand:         0.85486                    0.71749
+FM:           0.09366                    0.15103 
+Completeness: 0.05034                    0.06425 
+Homogeneity:  0.05112                    0.04629 
+V measure:    0.05073                    0.05381
+Silhouette:   0.13475                    0.12160
+CH Score:     909.78358                 639.11819
+Finished cluster for  VideoVAE
+
+Start classification fine-tuning
+Epoch: 4 	 Train Loss: 0.082967	 Test Loss: 0.084724
+Epoch: 9 	 Train Loss: 0.082943	 Test Loss: 0.084701
+Epoch: 14 	 Train Loss: 0.082940	 Test Loss: 0.084700
+Epoch: 19 	 Train Loss: 0.082937	 Test Loss: 0.084699
+Epoch: 24 	 Train Loss: 0.082937	 Test Loss: 0.084699
+Epoch: 29 	 Train Loss: 0.082937	 Test Loss: 0.084699
+Epoch: 34 	 Train Loss: 0.082937	 Test Loss: 0.084699
+Epoch: 39 	 Train Loss: 0.082936	 Test Loss: 0.084699
+Epoch: 44 	 Train Loss: 0.082937	 Test Loss: 0.084699
+Epoch: 49 	 Train Loss: 0.082937	 Test Loss: 0.084699
+Epoch: 54 	 Train Loss: 0.082936	 Test Loss: 0.084699
+Epoch: 59 	 Train Loss: 0.082937	 Test Loss: 0.084699
+Finished training
+Best test loss: 0.084699 at epoch: 19
+Start evaluation
+
+Evaluation of fine-tuned VideoVAE model
+
+Confusion matrix
+['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14']
+1 [  0   0   0 300   0   0   0   0   0   0   0   0   0   0]
+2 [  0   0   0 300   0   0   0   0   0   0   0   0   0   0]
+3 [  0   0   0 300   0   0   0   0   0   0   0   0   0   0]
+4 [  0   0   0 300   0   0   0   0   0   0   0   0   0   0]
+5 [  0   0   0 160   0   0   0   0   0   0   0   0   0   0]
+6 [  0   0   0 300   0   0   0   0   0   0   0   0   0   0]
+7 [ 0  0  0 72  0  0  0  0  0  0  0  0  0  0]
+8 [  0   0   0 300   0   0   0   0   0   0   0   0   0   0]
+9 [ 0  0  0 60  0  0  0  0  0  0  0  0  0  0]
+10 [  0   0   0 300   0   0   0   0   0   0   0   0   0   0]
+11 [  0   0   0 300   0   0   0   0   0   0   0   0   0   0]
+12 [  0   0   0 212   0   0   0   0   0   0   0   0   0   0]
+13 [  0   0   0 108   0   0   0   0   0   0   0   0   0   0]
+14 [  0   0   0 228   0   0   0   0   0   0   0   0   0   0]
+F1 Score: 0.015693659761456372
+
+Start risk score fine-tuning
+Epoch: 4 	 Train Loss: 0.193525	 Test Loss: 0.177322
+Epoch: 9 	 Train Loss: 0.019235	 Test Loss: 0.012369
+Epoch: 14 	 Train Loss: 0.013988	 Test Loss: 0.011810
+Epoch: 19 	 Train Loss: 0.026001	 Test Loss: 0.023910
+Epoch: 24 	 Train Loss: 0.014656	 Test Loss: 0.015472
+Epoch: 29 	 Train Loss: 0.013976	 Test Loss: 0.014863
+Epoch: 34 	 Train Loss: 0.013929	 Test Loss: 0.014780
+Epoch: 39 	 Train Loss: 0.013957	 Test Loss: 0.014771
+Epoch: 44 	 Train Loss: 0.013897	 Test Loss: 0.014768
+Epoch: 49 	 Train Loss: 0.013898	 Test Loss: 0.014767
+Epoch: 54 	 Train Loss: 0.013910	 Test Loss: 0.014767
+Epoch: 59 	 Train Loss: 0.013943	 Test Loss: 0.014767
+Finished training VideoVAE for risk score prediction
+Best test loss: 0.009573 at epoch: 10
+Start evaluation
+
+Evaluation of fine-tuned VideoVAE model
+
+MAPE Score: 1.2029443979263306
+
+Finished

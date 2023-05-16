@@ -14,7 +14,6 @@ class TimeseriesVAE(nn.Module):
         self.hidden_dim = hidden_layers[1]
         self.num_hidden_layers = hidden_layers[2]
         self.latent_dim = latent_dim
-        self.mask_value = -999
         # Encoder
         self.standard_encoder = TimeseriesEncoder(
             input_dim = 35, # cont_shape + cat1_shape

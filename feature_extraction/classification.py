@@ -15,6 +15,8 @@ from VideoAutoencoder import VideoAutoencoder
 from VideoBert import VideoBERT
 from VideoBERT_pretrained import VideoBERT_pretrained
 from MAE import MAE
+from TimeBERT import TimeBERT
+from MidMVAE import MidMVAE
 import math
 from sklearn.metrics import confusion_matrix, f1_score
 import matplotlib.pyplot as plt
@@ -33,19 +35,12 @@ class SimpleModel(nn.Module):
         super(SimpleModel, self).__init__()
         self.fc1 = nn.Linear(input_dim, hidden_dim)
         self.fc2 = nn.Linear(hidden_dim, num_classes)
-        # num_classes is the number of classes in your classification task
-        #self.fc3 = nn.Linear(hidden_dim, num_classes)  
-
-        init.kaiming_normal_(self.fc1.weight, mode='fan_in', nonlinearity='leaky_relu')
-        #init.kaiming_normal_(self.fc2.weight, mode='fan_in', nonlinearity='leaky_relu')
-        
+    
     def forward(self, x):
         x = self.fc1(x)
         x = nn.functional.leaky_relu(x)
         x = self.fc2(x)
-        #x = nn.functional.leaky_relu(x)
-        #x = self.fc3(x)
-        x = nn.functional.softmax(x, dim=1)
+        #x = nn.functional.softmax(x, dim=1)
         return x
 
 def prep_timeseries(timeseries):
@@ -61,23 +56,14 @@ def prep_timeseries(timeseries):
         masks.append(mask)
         # If features are continous
         if idx in [0, 3, 5]:
-            timeseries[idx] = F.normalize(t, p=1, dim=1)
+            timeseries[idx] = F.normalize(t, p=1, dim=-1)
     return timeseries
 
-<<<<<<< HEAD
 def train_test_classification(model, epochs = 100, lr = 0.1, latent_dim = 32, hidden_dim = 512, hidden_layers = [[128, 256, 512, 512], 256, 3], split_size = 1):
-=======
-def train_test_classification(model, epochs = 100, lr = 0.1, latent_dim = 32, hidden_dim = 512, hidden_layers = [[128, 256, 512, 512], 256, 3]):
->>>>>>> 3d4166e88f8c6bfbb231d645829b909bac5bfa79
     print("\nStart classification fine-tuning")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # Define the model architecture
-<<<<<<< HEAD
     pretrained_model = model(input_dims= [(64 // split_size, 128, 128, 3), (200 // split_size, 352)], latent_dim=latent_dim, 
-=======
-
-    pretrained_model = model(input_dims= [(64, 128, 128, 3), (200, 352)], latent_dim=latent_dim, 
->>>>>>> 3d4166e88f8c6bfbb231d645829b909bac5bfa79
                     hidden_layers = hidden_layers, dropout= 0.2).to(device)
 
     model_name = pretrained_model.__class__.__name__
@@ -91,13 +77,13 @@ def train_test_classification(model, epochs = 100, lr = 0.1, latent_dim = 32, hi
     for param in pretrained_model.parameters():
         param.requires_grad = False
 
-    if pretrained_model.__class__.__name__ == "MAE":
+    if pretrained_model.__class__.__name__ == "MAE" or pretrained_model.__class__.__name__ == "HMAE":
         simple_model = SimpleModel(latent_dim * 2, hidden_dim, 14).to(device)
     else: 
         simple_model = SimpleModel(latent_dim, hidden_dim, 14).to(device)
 
     # Define loss function
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(weight=torch.tensor([249.0, 250.0, 250.0, 250.0, 133.0, 250.0, 57.0, 250.0, 48.0, 249.0, 248.0, 175.0, 88.0, 188.0]).to(device))
 
     # Define optimizer
     optimizer = optim.Adam(simple_model.parameters(), lr=lr)
@@ -138,7 +124,7 @@ def train_test_classification(model, epochs = 100, lr = 0.1, latent_dim = 32, hi
                 timeseries = timeseries_slices[i]
                 if "Video" in model_name:
                     video = video.to(device)
-                    if "VAE" in model_name:
+                    if model_name != "VideoAutoencoder":
                         recon_video, kl_divergence, latent_representation, mus = pretrained_model(video)
                         latent = mus
                     else: 
@@ -148,7 +134,7 @@ def train_test_classification(model, epochs = 100, lr = 0.1, latent_dim = 32, hi
                     timeseries = [t.to(device) for t in timeseries]
                     timeseries = prep_timeseries(timeseries)
                     recon_timeseries, kl_divergence, latent_representation, mus = pretrained_model(timeseries)
-                    latent = mus
+                    latent = mus                   
                 else:
                     video = video.to(device)
                     timeseries = [t.to(device) for t in timeseries]
@@ -222,7 +208,7 @@ def train_test_classification(model, epochs = 100, lr = 0.1, latent_dim = 32, hi
                 torch.save(simple_model.state_dict(), f'models/{model_name}_simple_state.pth')
 
         # Print loss
-        if ( epoch + 1 ) % 2 == 0:
+        if ( epoch + 1 ) % 5 == 0:
             print('Epoch: {} \t Train Loss: {:.6f}\t Test Loss: {:.6f}'.format(epoch, train_loss, test_loss), flush = True)
 
     print("Finished training")
@@ -234,7 +220,7 @@ def evaluate(pretrained_model, model_name, latent_dim = 32, hidden_dim = 256, sp
     print("Start evaluation", flush = True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # load simple model
-    if pretrained_model.__class__.__name__ == "MAE":
+    if model_name == "MAE" or model_name == "HMAE":
         simple_model = SimpleModel(latent_dim * 2, hidden_dim, 14).to(device)
     else: 
         simple_model = SimpleModel(latent_dim, hidden_dim, 14).to(device)
@@ -271,7 +257,7 @@ def evaluate(pretrained_model, model_name, latent_dim = 32, hidden_dim = 256, sp
                 timeseries = timeseries_slices[i]
                 if "Video" in model_name:
                     video = video.to(device)
-                    if "VAE" in model_name:
+                    if model_name != "VideoAutoencoder":
                         recon_video, kl_divergence, latent_representation, mus = pretrained_model(video)
                         latent = mus
                     else: 
@@ -324,4 +310,4 @@ def evaluate(pretrained_model, model_name, latent_dim = 32, hidden_dim = 256, sp
 if __name__ == "__main__":
     torch.manual_seed(42)
     np.random.seed(42)
-    train_test_classification(VideoAutoencoder, epochs=30, lr=0.1, latent_dim=1024, hidden_dim=512)
+    train_test_classification(TimeBERT, epochs=65, lr=0.1, latent_dim=64, hidden_dim = 1024, hidden_layers=[[128, 256, 512, 512], 1024, 3], split_size=4)

@@ -1,0 +1,186 @@
+Latent dimension: 64, Hidden dimension 512, Split size 4
+Started: TimeBERT, Augmented run
+Using device: cuda
+Model: TimeBERT
+Number of parameters in model:  33273170
+torch.cuda.memory_allocated: 0.124938GB
+torch.cuda.memory_reserved: 0.136719GB
+torch.cuda.max_memory_reserved: 0.136719GB
+Start training
+Time taken: 751.52 seconds
+Epoch: 9 	 Train Loss: 36041.113795	 Test Loss: 32971.548515
+Time taken: 1475.76 seconds
+Epoch: 19 	 Train Loss: 35714.540823	 Test Loss: 33107.326852
+Time taken: 2199.22 seconds
+Epoch: 29 	 Train Loss: 35680.726841	 Test Loss: 32437.804128
+Time taken: 2906.50 seconds
+Epoch: 39 	 Train Loss: 35608.577176	 Test Loss: 32546.665934
+Time taken: 3602.47 seconds
+Epoch: 49 	 Train Loss: 35513.199795	 Test Loss: 32444.869541
+Time taken: 4308.99 seconds
+Epoch: 59 	 Train Loss: 35402.592052	 Test Loss: 32363.831761
+Time taken: 5019.49 seconds
+Epoch: 69 	 Train Loss: 35358.770595	 Test Loss: 32435.771605
+Time taken: 5704.74 seconds
+Epoch: 79 	 Train Loss: 35340.226525	 Test Loss: 32387.072434
+Time taken: 6391.85 seconds
+Epoch: 89 	 Train Loss: 35361.664674	 Test Loss: 32388.530498
+Time taken: 7076.51 seconds
+Epoch: 99 	 Train Loss: 35344.449978	 Test Loss: 32390.128771
+Time taken: 7761.73 seconds
+Epoch: 109 	 Train Loss: 35307.238188	 Test Loss: 32391.382340
+Time taken: 8437.36 seconds
+Epoch: 119 	 Train Loss: 35346.912069	 Test Loss: 32387.828096
+Time taken: 9114.49 seconds
+Epoch: 129 	 Train Loss: 35408.227074	 Test Loss: 32390.933189
+Time taken: 9785.10 seconds
+Epoch: 139 	 Train Loss: 35434.506893	 Test Loss: 32391.166030
+Time taken: 10459.91 seconds
+Epoch: 149 	 Train Loss: 35340.796226	 Test Loss: 32390.722454
+Finished training
+Time taken: 10459.91 seconds
+Best test loss: 32345.579061 at epoch: 55
+Timeseries loss: 32063.32000144676
+Timeseries MAPE: 3.181360
+Video MAPE: 0.000000
+Masked MAPE: 3.172032
+Started
+Latent representations ready
+
+Cluster  2
+              K-means results      Spectral clustering results
+ARI:          0.01227                    0.00155
+Rand:         0.49727                    0.17827
+FM:           0.21982                    0.27183 
+Completeness: 0.06066                    0.28087 
+Homogeneity:  0.01624                    0.02517 
+V measure:    0.02562                    0.04619
+Silhouette:   0.49478                    0.52744
+CH Score:     3977.14911                 1422.36074
+
+Cluster  4
+              K-means results      Spectral clustering results
+ARI:          0.02196                    0.01154
+Rand:         0.69756                    0.53740
+FM:           0.17199                    0.20837 
+Completeness: 0.08689                    0.11727 
+Homogeneity:  0.04553                    0.04098 
+V measure:    0.05975                    0.06073
+Silhouette:   0.47752                    0.47928
+CH Score:     4463.39034                 2541.02239
+
+Cluster  6
+              K-means results      Spectral clustering results
+ARI:          0.02886                    0.02178
+Rand:         0.76245                    0.72418
+FM:           0.15421                    0.16193 
+Completeness: 0.09885                    0.10523 
+Homogeneity:  0.06604                    0.06278 
+V measure:    0.07918                    0.07864
+Silhouette:   0.53395                    0.50217
+CH Score:     4526.00272                 3746.22933
+
+Cluster  8
+              K-means results      Spectral clustering results
+ARI:          0.03263                    0.02510
+Rand:         0.80179                    0.76011
+FM:           0.14022                    0.15117 
+Completeness: 0.09893                    0.10694 
+Homogeneity:  0.07697                    0.07328 
+V measure:    0.08658                    0.08697
+Silhouette:   0.58389                    0.54030
+CH Score:     4807.56401                 3634.02439
+
+Cluster  10
+              K-means results      Spectral clustering results
+ARI:          0.02884                    0.02714
+Rand:         0.80911                    0.79274
+FM:           0.13272                    0.13885 
+Completeness: 0.10418                    0.10929 
+Homogeneity:  0.08598                    0.08587 
+V measure:    0.09421                    0.09618
+Silhouette:   0.60539                    0.58241
+CH Score:     5136.23607                 4217.52818
+
+Cluster  12
+              K-means results      Spectral clustering results
+ARI:          0.02964                    0.02720
+Rand:         0.82235                    0.80232
+FM:           0.12681                    0.13436 
+Completeness: 0.10494                    0.11005 
+Homogeneity:  0.09247                    0.09059 
+V measure:    0.09831                    0.09938
+Silhouette:   0.61497                    0.61092
+CH Score:     5104.93601                 4287.66688
+
+Cluster  14
+              K-means results      Spectral clustering results
+ARI:          0.02999                    0.01286
+Rand:         0.82983                    0.67364
+FM:           0.12320                    0.16972 
+Completeness: 0.10694                    0.12168 
+Homogeneity:  0.09889                    0.07732 
+V measure:    0.10276                    0.09455
+Silhouette:   0.63035                    0.40463
+CH Score:     5101.32467                 1246.31226
+Finished cluster for  TimeBERT
+
+Start classification fine-tuning
+Epoch: 4 	 Train Loss: 0.088928	 Test Loss: 0.089557
+Epoch: 9 	 Train Loss: 0.083408	 Test Loss: 0.084720
+Epoch: 14 	 Train Loss: 0.082940	 Test Loss: 0.084701
+Epoch: 19 	 Train Loss: 0.082937	 Test Loss: 0.084699
+Epoch: 24 	 Train Loss: 0.082937	 Test Loss: 0.084699
+Epoch: 29 	 Train Loss: 0.082936	 Test Loss: 0.084699
+Epoch: 34 	 Train Loss: 0.082937	 Test Loss: 0.084699
+Epoch: 39 	 Train Loss: 0.082936	 Test Loss: 0.084699
+Epoch: 44 	 Train Loss: 0.082936	 Test Loss: 0.084699
+Epoch: 49 	 Train Loss: 0.082936	 Test Loss: 0.084699
+Epoch: 54 	 Train Loss: 0.082936	 Test Loss: 0.084699
+Epoch: 59 	 Train Loss: 0.082937	 Test Loss: 0.084699
+Finished training
+Best test loss: 0.084699 at epoch: 28
+Start evaluation
+
+Evaluation of fine-tuned TimeBERT model
+
+Confusion matrix
+['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14']
+1 [  0   0   0   0   0   0   0 300   0   0   0   0   0   0]
+2 [  0   0   0   0   0   0   0 300   0   0   0   0   0   0]
+3 [  0   0   0   0   0   0   0 300   0   0   0   0   0   0]
+4 [  0   0   0   0   0   0   0 300   0   0   0   0   0   0]
+5 [  0   0   0   0   0   0   0 160   0   0   0   0   0   0]
+6 [  0   0   0   0   0   0   0 300   0   0   0   0   0   0]
+7 [ 0  0  0  0  0  0  0 72  0  0  0  0  0  0]
+8 [  0   0   0   0   0   0   0 300   0   0   0   0   0   0]
+9 [ 0  0  0  0  0  0  0 60  0  0  0  0  0  0]
+10 [  0   0   0   0   0   0   0 300   0   0   0   0   0   0]
+11 [  0   0   0   0   0   0   0 300   0   0   0   0   0   0]
+12 [  0   0   0   0   0   0   0 212   0   0   0   0   0   0]
+13 [  0   0   0   0   0   0   0 108   0   0   0   0   0   0]
+14 [  0   0   0   0   0   0   0 228   0   0   0   0   0   0]
+F1 Score: 0.015693659761456372
+
+Start risk score fine-tuning
+Epoch: 4 	 Train Loss: 0.879050	 Test Loss: 0.849578
+Epoch: 9 	 Train Loss: 0.853108	 Test Loss: 0.950600
+Epoch: 14 	 Train Loss: 0.049094	 Test Loss: 0.043615
+Epoch: 19 	 Train Loss: 0.022736	 Test Loss: 0.021665
+Epoch: 24 	 Train Loss: 0.014577	 Test Loss: 0.014420
+Epoch: 29 	 Train Loss: 0.012283	 Test Loss: 0.015239
+Epoch: 34 	 Train Loss: 0.011966	 Test Loss: 0.012180
+Epoch: 39 	 Train Loss: 0.010213	 Test Loss: 0.010153
+Epoch: 44 	 Train Loss: 0.010326	 Test Loss: 0.010673
+Epoch: 49 	 Train Loss: 0.008639	 Test Loss: 0.009372
+Epoch: 54 	 Train Loss: 0.008526	 Test Loss: 0.009289
+Epoch: 59 	 Train Loss: 0.008537	 Test Loss: 0.009255
+Finished training TimeBERT for risk score prediction
+Best test loss: 0.009239 at epoch: 58
+Start evaluation
+
+Evaluation of fine-tuned TimeBERT model
+
+MAPE Score: 1.0646275281906128
+
+Finished

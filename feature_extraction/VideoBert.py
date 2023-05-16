@@ -24,7 +24,7 @@ class VideoBERT(nn.Module):
         for i in range(len(cnn_filters)):
             cnn_layers.append(nn.Conv3d(in_channels, cnn_filters[i], kernel_size = kernel_size, stride = stride, padding = padding))
             cnn_layers.append(nn.LeakyReLU(inplace=True))
-            cnn_layers.append(nn.BatchNorm3d(cnn_filters[i]))
+            #cnn_layers.append(nn.BatchNorm3d(cnn_filters[i]))
             in_channels = cnn_filters[i]
         self.cnn_encoder = nn.Sequential(*cnn_layers)
 
@@ -56,19 +56,27 @@ class VideoBERT(nn.Module):
                 init.constant_(param, 0.0)
 
         # Add a new linear layer to output the latent representation
-        self.fc = nn.Linear(self.transformer_d_model, latent_dim)
+        self.fc_middle2 = nn.Linear(self.transformer_d_model * input_dims[0][0], self.transformer_d_model)
+        self.fc_mu = nn.Linear(self.transformer_d_model, latent_dim)
+        self.fc_logvar = nn.Linear(self.transformer_d_model, latent_dim)
 
         # Weight init for linear layers
-        init.kaiming_normal_(self.fc.weight, mode='fan_in', nonlinearity='leaky_relu')
+        init.kaiming_normal_(self.fc_middle2.weight, mode='fan_in', nonlinearity='leaky_relu')
         init.kaiming_normal_(self.fc_middle.weight, mode='fan_in', nonlinearity='leaky_relu')
 
         # Activation function 
-        self.activation = nn.LeakyReLU()
 
         self.decoder = VideoBERTDecoder(self.transformer_d_model, latent_dim, input_dims[0][0], cnn_filters=cnn_filters,
                                         kernel_size = kernel_size, stride = stride, padding = padding, input_size = output_size, dropout=dropout)
         # Define class variables
         self.num_frames = input_dims[0][0]
+
+    def sampling(self, args):
+        mu, log_var = args
+        std = torch.exp(0.5 * log_var)
+        eps = torch.randn_like(std)
+        z = mu + eps * std
+        return z
 
     def forward(self, x):
         # Reshape input from (batch_size, channels, num_frames, height, width) to (batch_size*num_frames, channels, height, width)
@@ -81,17 +89,27 @@ class VideoBERT(nn.Module):
         # Reshape CNN output to (batch_size, num_frames, cnn_encoded_size)
         cnn_encoded = cnn_encoded.view(batch_size, num_frames, -1)
         cnn_encoded = self.fc_middle(cnn_encoded)
-        cnn_encoded = self.activation(cnn_encoded)
+        cnn_encoded = F.leaky_relu(cnn_encoded)
+        # Add special token
+        special_token = torch.zeros((cnn_encoded.size(0), 1, cnn_encoded.size(2)))
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        special_token = torch.sub(special_token, -999).to(device)
+        cnn_encoded = torch.cat([special_token, cnn_encoded], dim = 1)
         # Encode CNN output using Transformer encoder
-        encoded_features = self.transformer_encoder(cnn_encoded)
-        encoded_features = self.activation(encoded_features)
+        encoded_features = self.transformer_encoder(cnn_encoded)[:, 1:, :]
         # Take the last encoded frame as the representation of the input video
-        encoded_video = encoded_features[:, -1, :]  # shape: (batch_size, transformer_d_model)
+        #encoded_video = encoded_features[:, -1, :]  # shape: (batch_size, transformer_d_model)
+        encoded = encoded_features.view(x.size(0), -1)
+        encoded = F.leaky_relu(self.fc_middle2(encoded))
         # Apply the final linear layer to obtain the latent representation
-        latent_representation = self.fc(encoded_video)  # shape: (batch_size, latent_dim)
+        mu = self.fc_mu(encoded)  # shape: (batch_size, latent_dim)
+        logvar = self.fc_logvar(encoded)
+        z = self.sampling((mu, logvar))
+        kl_divergence = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1).mean()
+
         # Use the decoder to generate the predicted future frames
-        predicted_frames = self.decoder(latent_representation, encoded_features)  # shape: (batch_size, 3, num_frames, H, W)
-        return predicted_frames, latent_representation
+        predicted_frames = self.decoder(z, encoded_features)  # shape: (batch_size, 3, num_frames, H, W)
+        return predicted_frames, kl_divergence, z, mu
 
 class VideoBERTDecoder(nn.Module):
     def __init__(self, transformer_d_model, latent_dim, num_predicted_frames, cnn_filters, kernel_size, stride, padding, input_size, dropout):
@@ -142,7 +160,7 @@ class VideoBERTDecoder(nn.Module):
         cnn_filters.append(3)
         for i in range(len(cnn_filters)):
             cnn_layers.append(nn.ConvTranspose3d(in_channels, cnn_filters[i], kernel_size = kernel_size, stride = stride, padding = padding))
-            cnn_layers.append(nn.BatchNorm3d(cnn_filters[i]))
+            #cnn_layers.append(nn.BatchNorm3d(cnn_filters[i]))
             if i == len(cnn_filters) - 1:
                 cnn_layers.append(nn.Sigmoid())
             else:

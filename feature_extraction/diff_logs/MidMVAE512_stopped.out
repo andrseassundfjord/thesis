@@ -1,0 +1,51 @@
+Latent dimension: 512, Hidden dimension 1024, Split size 4
+Started: MidMVAE, Augmented run
+Using device: cuda
+Model: MidMVAE
+Number of parameters in model:  634977115
+torch.cuda.memory_allocated: 2.365487GB
+torch.cuda.memory_reserved: 2.367188GB
+torch.cuda.max_memory_reserved: 2.367188GB
+Start training
+Time taken: 3781.36 seconds
+Epoch: 9 	 Train Loss: 148683.003996	 Test Loss: 162440.912346
+Time taken: 7590.79 seconds
+Epoch: 19 	 Train Loss: 128467.528370	 Test Loss: 135824.029475
+Time taken: 11388.51 seconds
+Epoch: 29 	 Train Loss: 119688.890650	 Test Loss: 130014.372685
+Time taken: 15204.61 seconds
+Epoch: 39 	 Train Loss: 113417.703117	 Test Loss: 122640.457716
+Time taken: 19388.72 seconds
+Epoch: 49 	 Train Loss: 108856.641183	 Test Loss: 116110.225540
+Time taken: 23634.18 seconds
+Epoch: 59 	 Train Loss: 105450.201652	 Test Loss: 112104.126698
+Time taken: 27801.59 seconds
+Epoch: 69 	 Train Loss: 102650.724227	 Test Loss: 109600.899691
+Time taken: 31971.01 seconds
+Epoch: 79 	 Train Loss: 100206.728157	 Test Loss: 106870.447685
+Time taken: 36161.20 seconds
+Epoch: 89 	 Train Loss: 98114.895844	 Test Loss: 105257.786497
+Time taken: 40389.75 seconds
+Epoch: 99 	 Train Loss: 96350.543554	 Test Loss: 102662.914583
+Time taken: 44499.44 seconds
+Epoch: 109 	 Train Loss: 94376.872802	 Test Loss: 101701.799306
+Time taken: 48609.89 seconds
+Epoch: 119 	 Train Loss: 92869.134257	 Test Loss: 101339.479784
+Time taken: 52709.30 seconds
+Epoch: 129 	 Train Loss: 92740.322589	 Test Loss: 101172.931867
+Time taken: 56814.57 seconds
+Epoch: 139 	 Train Loss: 92714.854822	 Test Loss: 101136.995525
+Time taken: 60904.12 seconds
+Epoch: 149 	 Train Loss: 92700.140583	 Test Loss: 101144.920833
+Finished training
+Time taken: 60904.12 seconds
+Best test loss: 101034.390972 at epoch: 116
+Timeseries loss: 22974.077150848767
+Video loss: 78055.45767746914, at epoch: 116
+Timeseries MAPE: 42097393664.000000
+Video MAPE: 2.422597
+Started
+Latent representations ready
+
+Cluster  2
+slurmstepd: error: *** JOB 5555846 ON aventador CANCELLED AT 2023-05-11T11:50:36 ***
