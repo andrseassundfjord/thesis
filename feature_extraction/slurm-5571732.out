@@ -1,0 +1,25 @@
+
+Start risk score fine-tuning
+Epoch: 4 	 Train Loss: 0.839536	 Test Loss: 0.829103
+Epoch: 9 	 Train Loss: 0.908126	 Test Loss: 0.857139
+Epoch: 14 	 Train Loss: 0.830956	 Test Loss: 0.842087
+Epoch: 19 	 Train Loss: 0.817636	 Test Loss: 0.830149
+Epoch: 24 	 Train Loss: 0.816402	 Test Loss: 0.828865
+Epoch: 29 	 Train Loss: 0.815912	 Test Loss: 0.828717
+Epoch: 34 	 Train Loss: 0.815825	 Test Loss: 0.828671
+Epoch: 39 	 Train Loss: 0.815927	 Test Loss: 0.828661
+Epoch: 44 	 Train Loss: 0.815684	 Test Loss: 0.828660
+Epoch: 49 	 Train Loss: 0.815544	 Test Loss: 0.828660
+Epoch: 54 	 Train Loss: 0.815822	 Test Loss: 0.828660
+Epoch: 59 	 Train Loss: 0.815903	 Test Loss: 0.828660
+Epoch: 64 	 Train Loss: 0.815754	 Test Loss: 0.828660
+Epoch: 69 	 Train Loss: 0.815844	 Test Loss: 0.828660
+Epoch: 74 	 Train Loss: 0.815710	 Test Loss: 0.828660
+Epoch: 79 	 Train Loss: 0.815725	 Test Loss: 0.828660
+Finished training MAE for risk score prediction
+Best test loss: 0.828379 at epoch: 6
+Start evaluation
+
+Evaluation of fine-tuned MAE model
+
+MAPE Score: 69.14663696289062

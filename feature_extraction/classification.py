@@ -172,7 +172,7 @@ def train_test_classification(model, epochs = 100, lr = 0.1, latent_dim = 32, hi
                     timeseries = timeseries_slices[i]
                     if "Video" in model_name:
                         video = video.to(device)
-                        if "VAE" in model_name:
+                        if model_name != "VideoAutoencoder":
                             recon_video, kl_divergence, latent_representation, mus = pretrained_model(video)
                             latent = mus
                         else: 
@@ -310,4 +310,4 @@ def evaluate(pretrained_model, model_name, latent_dim = 32, hidden_dim = 256, sp
 if __name__ == "__main__":
     torch.manual_seed(42)
     np.random.seed(42)
-    train_test_classification(TimeBERT, epochs=65, lr=0.1, latent_dim=64, hidden_dim = 1024, hidden_layers=[[128, 256, 512, 512], 1024, 3], split_size=4)
+    train_test_classification(VideoBERT, epochs=80, lr=0.1, latent_dim=64, hidden_dim = 1024, hidden_layers=[[128, 256, 512, 512], 1024, 3], split_size=4)

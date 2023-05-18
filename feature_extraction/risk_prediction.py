@@ -14,6 +14,7 @@ from TimeseriesVAE import TimeseriesVAE
 from VideoVAE import VideoVAE
 from VideoAutoencoder import VideoAutoencoder
 from VideoBert import VideoBERT
+from MAE import MAE
 from VideoBERT_pretrained import VideoBERT_pretrained
 import math
 from sklearn.metrics import mean_absolute_percentage_error
@@ -58,17 +59,11 @@ def prep_timeseries(timeseries):
     return timeseries
 
 def plot_difference(y_pred, y_true, model_name):
-    diff = torch.mean(torch.sub(y_true, y_pred), dim = -1).detach().to("cpu").numpy()
+    diff = torch.sub(y_true, y_pred).detach().to("cpu").numpy()
     plt.hist(diff, bins=20)
-    plt.xlabel('Mean Difference')
+    plt.xlabel('Difference')
     plt.ylabel('Frequency')
-    plt.savefig(f"results/riskScore_results/mean_{model_name}")
-    plt.clf()
-    diff = torch.std(torch.sub(y_true, y_pred), dim = -1).detach().to("cpu").numpy()
-    plt.hist(diff, bins=20)
-    plt.xlabel('Standard Deviation of Difference')
-    plt.ylabel('Frequency')
-    plt.savefig(f"results/riskScore_results/std_{model_name}")    
+    plt.savefig(f"results/riskScore_results/{model_name}") 
 
 def train_test_risk(model, epochs = 100, lr = 0.01, latent_dim = 32, hidden_dim = 512, hidden_layers = [[128, 256, 512, 512], 256, 3], split_size = 1):
     print("\nStart risk score fine-tuning")
@@ -182,7 +177,7 @@ def train_test_risk(model, epochs = 100, lr = 0.01, latent_dim = 32, hidden_dim 
                     timeseries = timeseries_slices[i]
                     if "Video" in model_name:
                         video = video.to(device)
-                        if "VAE" in model_name:
+                        if model_name != "VideoAutoencoder":
                             recon_video, kl_divergence, latent_representation, mus = pretrained_model(video)
                             latent = mus
                         else: 
@@ -230,7 +225,10 @@ def evaluate(pretrained_model, model_name, latent_dim, hidden_dim, split_size = 
     print("Start evaluation", flush = True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # load simple model
-    simple_model = SimpleModel(latent_dim, hidden_dim).to(device)
+    if model_name == "MAE" or model_name == "HMAE":
+        simple_model = SimpleModel(latent_dim * 2, hidden_dim).to(device)
+    else:
+        simple_model = SimpleModel(latent_dim, hidden_dim).to(device)
     if split_size > 1:
         simple_model.load_state_dict(torch.load(f'augmented_models/{model_name}_risk_state.pth'))
     else:
@@ -263,7 +261,7 @@ def evaluate(pretrained_model, model_name, latent_dim, hidden_dim, split_size = 
                 timeseries = timeseries_slices[i]
                 if "Video" in model_name:
                     video = video.to(device)
-                    if "VAE" in model_name:
+                    if model_name != "VideoAutoencoder":
                         recon_video, kl_divergence, latent_representation, mus = pretrained_model(video)
                         latent = mus
                     else: 
@@ -301,4 +299,4 @@ def evaluate(pretrained_model, model_name, latent_dim, hidden_dim, split_size = 
 if __name__ == "__main__":
     torch.manual_seed(42)
     np.random.seed(42)
-    train_test_risk(TimeBERT, epochs=65, lr=0.1, latent_dim=64, hidden_dim = 512, hidden_layers=[[128, 256, 512, 512], 1024, 3], split_size=4)
+    train_test_risk(MAE, epochs=80, lr=0.1, latent_dim=64, hidden_dim = 1024, hidden_layers=[[128, 256, 512, 512], 512, 3], split_size=4)

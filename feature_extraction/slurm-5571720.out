@@ -1,0 +1,41 @@
+
+Start classification fine-tuning
+Epoch: 4 	 Train Loss: 1.541415	 Test Loss: 1.102980
+Epoch: 9 	 Train Loss: 1.888643	 Test Loss: 1.892854
+Epoch: 14 	 Train Loss: 0.224846	 Test Loss: 0.203241
+Epoch: 19 	 Train Loss: 0.099610	 Test Loss: 0.103866
+Epoch: 24 	 Train Loss: 0.082730	 Test Loss: 0.090957
+Epoch: 29 	 Train Loss: 0.079114	 Test Loss: 0.086605
+Epoch: 34 	 Train Loss: 0.077801	 Test Loss: 0.083753
+Epoch: 39 	 Train Loss: 0.077267	 Test Loss: 0.084530
+Epoch: 44 	 Train Loss: 0.076881	 Test Loss: 0.084458
+Epoch: 49 	 Train Loss: 0.076739	 Test Loss: 0.084166
+Epoch: 54 	 Train Loss: 0.076779	 Test Loss: 0.084216
+Epoch: 59 	 Train Loss: 0.076800	 Test Loss: 0.084218
+Epoch: 64 	 Train Loss: 0.076734	 Test Loss: 0.084218
+Epoch: 69 	 Train Loss: 0.076741	 Test Loss: 0.084218
+Epoch: 74 	 Train Loss: 0.076679	 Test Loss: 0.084218
+Epoch: 79 	 Train Loss: 0.076720	 Test Loss: 0.084218
+Finished training
+Best test loss: 0.083753 at epoch: 34
+Start evaluation
+
+Evaluation of fine-tuned VideoBERT model
+
+Confusion matrix
+['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14']
+1 [168 132   0   0   0   0   0   0   0   0   0   0   0   0]
+2 [150 150   0   0   0   0   0   0   0   0   0   0   0   0]
+3 [122 178   0   0   0   0   0   0   0   0   0   0   0   0]
+4 [198 102   0   0   0   0   0   0   0   0   0   0   0   0]
+5 [84 76  0  0  0  0  0  0  0  0  0  0  0  0]
+6 [117 183   0   0   0   0   0   0   0   0   0   0   0   0]
+7 [32 40  0  0  0  0  0  0  0  0  0  0  0  0]
+8 [ 88 212   0   0   0   0   0   0   0   0   0   0   0   0]
+9 [18 42  0  0  0  0  0  0  0  0  0  0  0  0]
+10 [114 186   0   0   0   0   0   0   0   0   0   0   0   0]
+11 [122 178   0   0   0   0   0   0   0   0   0   0   0   0]
+12 [ 81 131   0   0   0   0   0   0   0   0   0   0   0   0]
+13 [42 66  0  0  0  0  0  0  0  0  0  0  0  0]
+14 [112 116   0   0   0   0   0   0   0   0   0   0   0   0]
+F1 Score: 0.031076214936709964

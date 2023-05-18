@@ -545,10 +545,10 @@ def plot_num_frames(num_frames):
 
 if __name__ == "__main__":
 
-    model_arg = VideoVAE
+    model_arg = HMAE
     latent_dim = 64
     video_hidden_shape = [128, 256, 512, 512]
-    timeseries_hidden_dim = 512 if False else 1024
+    timeseries_hidden_dim = 1024
     timeseries_num_layers = 3
     hidden_layers = [video_hidden_shape, timeseries_hidden_dim, timeseries_num_layers]
     split_size = 4
@@ -556,7 +556,7 @@ if __name__ == "__main__":
     print(f"Latent dimension: {latent_dim}, Hidden dimension {timeseries_hidden_dim}, Split size {split_size}")
 
     run(
-        "VideoVAE_mean_triplet",
+        "HMAE_mean_triplet",
         load = True, # Load dataloaders
         train_ratio = 0.7,
         batch_size = 32,
@@ -575,7 +575,7 @@ if __name__ == "__main__":
 
     run_clustering(model_arg, latent_dim, hidden_layers, split_size = split_size)
     run_gmm_classification(model_arg, latent_dim, hidden_layers, split_size = split_size)
-    train_test_classification(model_arg, epochs=80, lr=0.1, latent_dim=latent_dim, hidden_dim=512, hidden_layers=hidden_layers, split_size = split_size)
-    train_test_risk(model_arg, epochs=80, lr=0.1, latent_dim=latent_dim, hidden_dim=512, hidden_layers=hidden_layers, split_size = split_size)
+    train_test_classification(model_arg, epochs=80, lr=0.1, latent_dim=latent_dim, hidden_dim=1024, hidden_layers=hidden_layers, split_size = split_size)
+    train_test_risk(model_arg, epochs=80, lr=0.1, latent_dim=latent_dim, hidden_dim=1024, hidden_layers=hidden_layers, split_size = split_size)
 
     print("\nFinished")
