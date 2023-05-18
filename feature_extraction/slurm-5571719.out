@@ -15,3 +15,5 @@ Time taken: 8638.77 seconds
 Epoch: 29 	 Train Loss: 736.941560	 Test Loss: 742.410154
 Time taken: 11496.86 seconds
 Epoch: 39 	 Train Loss: 608.943059	 Test Loss: 613.934915
+Time taken: 14255.93 seconds
+Epoch: 49 	 Train Loss: 509.352801	 Test Loss: 513.789769

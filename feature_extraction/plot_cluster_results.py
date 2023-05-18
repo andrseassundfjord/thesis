@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt 
 
 def plot_plots():
+    plt.rcParams.update({'font.size': 22})
     # Plot kmeans
     vae = np.array([0.31957, 0.11979, 0.09777, 0.05498, 0.05394, 0.04703, 0.05013])
     vvae = np.array([0.47327, 0.25186, 0.20626, 0.16971, 0.15812, 0.13764, 0.13503])
