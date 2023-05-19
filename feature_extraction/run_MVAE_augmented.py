@@ -545,10 +545,10 @@ def plot_num_frames(num_frames):
 
 if __name__ == "__main__":
 
-    model_arg = HMAE
-    latent_dim = 64
+    model_arg = MVAE
+    latent_dim = 256
     video_hidden_shape = [128, 256, 512, 512]
-    timeseries_hidden_dim = 1024
+    timeseries_hidden_dim = 512
     timeseries_num_layers = 3
     hidden_layers = [video_hidden_shape, timeseries_hidden_dim, timeseries_num_layers]
     split_size = 4
@@ -556,7 +556,7 @@ if __name__ == "__main__":
     print(f"Latent dimension: {latent_dim}, Hidden dimension {timeseries_hidden_dim}, Split size {split_size}")
 
     run(
-        "HMAE_mean_triplet",
+        "MVAE256",
         load = True, # Load dataloaders
         train_ratio = 0.7,
         batch_size = 32,

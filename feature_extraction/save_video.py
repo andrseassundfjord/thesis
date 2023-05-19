@@ -1,6 +1,7 @@
 import torch
 from VideoVAE import VideoVAE
 from VideoAutoencoder import VideoAutoencoder
+from MidMVAE import MidMVAE
 import cv2
 import random
 import numpy as np
@@ -41,12 +42,16 @@ def save_video(model_type):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # Get arguments from file
     # Define the model architecture
-    model = model_type(input_dims= [(64, 128, 128, 3), (200, 352)], latent_dim=32, 
-                    hidden_layers = [[128, 256, 512, 512], 256, 3], dropout= 0.2).to(device)
+    split_size = 4
+    model = model_type(input_dims= [(64 // split_size, 128, 128, 3), (200 // split_size, 352)], latent_dim=64, 
+                    hidden_layers = [[128, 256, 512, 512], 1024, 3], dropout= 0.2).to(device)
 
     model_name = model.__class__.__name__    
     # Load the model state
-    model.load_state_dict(torch.load(f'models/{model_name}_state.pth'))
+    if split_size > 1:
+        model.load_state_dict(torch.load(f'augmented_models/{model_name}_state.pth'))
+    else:
+        model.load_state_dict(torch.load(f'models/{model_name}_state.pth'))
 
     # Set the model to evaluation mode
     model.eval()
@@ -90,4 +95,4 @@ def save_video(model_type):
     print("Finished")
 
 if __name__ == "__main__":
-    save_video(VideoAutoencoder)
+    save_video(MidMVAE)

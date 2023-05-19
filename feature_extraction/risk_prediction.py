@@ -59,6 +59,7 @@ def prep_timeseries(timeseries):
     return timeseries
 
 def plot_difference(y_pred, y_true, model_name):
+    plt.clf()
     diff = torch.sub(y_true, y_pred).detach().to("cpu").numpy()
     plt.hist(diff, bins=20)
     plt.xlabel('Difference')
@@ -299,4 +300,4 @@ def evaluate(pretrained_model, model_name, latent_dim, hidden_dim, split_size = 
 if __name__ == "__main__":
     torch.manual_seed(42)
     np.random.seed(42)
-    train_test_risk(MAE, epochs=80, lr=0.1, latent_dim=64, hidden_dim = 1024, hidden_layers=[[128, 256, 512, 512], 512, 3], split_size=4)
+    train_test_risk(MVAE, epochs=80, lr=0.1, latent_dim=64, hidden_dim = 1024, hidden_layers=[[128, 256, 512, 512], 512, 3], split_size=4)
