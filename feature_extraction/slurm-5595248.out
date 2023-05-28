@@ -1,0 +1,9 @@
+Latent dimension: 32, Hidden dimension 512, Split size 4
+Started: MAE_rerun, Augmented run
+Using device: cuda
+Model: MAE
+Number of parameters in model:  416967253
+torch.cuda.memory_allocated: 1.555486GB
+torch.cuda.memory_reserved: 1.585938GB
+torch.cuda.max_memory_reserved: 1.585938GB
+Start training

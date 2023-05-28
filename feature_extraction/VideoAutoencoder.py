@@ -30,15 +30,18 @@ class VideoEncoder(nn.Module):
             nn.Conv3d(self.n_channel, self.hs[0], kernel_size = 4, stride = 2, padding = 1),
             #nn.BatchNorm3d(self.hs[0]),
             nn.LeakyReLU(),
+            nn.MaxPool3d(kernel_size = 2, stride = 1, padding = 1),
             nn.Conv3d(self.hs[0], self.hs[1], kernel_size = 4, stride = 2, padding = 1),
             #nn.BatchNorm3d(self.hs[1]),
             nn.LeakyReLU(),
+            nn.MaxPool3d(kernel_size = 2, stride = 1, padding = 1),
             nn.Conv3d(self.hs[1], self.hs[2], kernel_size = 4, stride = 2, padding = 1),
             #nn.BatchNorm3d(self.hs[2]),
             nn.LeakyReLU(),
+            nn.MaxPool3d(kernel_size = 2, stride = 1, padding = 1),
             Flatten(),
             nn.Dropout(dropout),
-            nn.Linear(int(self.hs[2] * self.width * self.height * self.n_frames / (8 ** 3)), self.hs[3]),
+            nn.Linear(int(self.hs[2] * self.width * self.height * self.n_frames / (8 * 8 * 8)), self.hs[3]),
             #nn.BatchNorm1d(self.hs[3]),
             nn.LeakyReLU()
         ])
@@ -56,12 +59,12 @@ class VideoEncoder(nn.Module):
         #nn.init.xavier_uniform_(self.fc.weight)
 
     def forward(self, x):
-        if torch.any(torch.isnan(x)):
-            print("NaN in: Encoder input")
+        #if torch.any(torch.isnan(x)):
+        #    print("NaN in: Encoder input")
         for layer in self.model:
             x = layer(x)
-            if torch.any(torch.isnan(x)):
-                print("NaN in: Encoder ", layer)
+            #if torch.any(torch.isnan(x)):
+            #    print("NaN in: Encoder ", layer)
             #print(layer, x.size())
         x = x.view(x.size(0), -1)
         #latent = self.sigmoid(self.fc(x))
@@ -135,12 +138,12 @@ class VideoDecoder(nn.Module):
                     init.constant_(m.bias, 0.0)
 
     def forward(self, x):
-        if torch.any(torch.isnan(x)):
-            print("NaN in: Decoder input")
+        #if torch.any(torch.isnan(x)):
+        #    print("NaN in: Decoder input")
         for layer in self.model:
             x = layer(x)
-            if torch.any(torch.isnan(x)):
-                print("NaN in: Decoder ", layer)
+        #    if torch.any(torch.isnan(x)):
+        #        print("NaN in: Decoder ", layer)
             #print(layer, x.size())
         return x
 

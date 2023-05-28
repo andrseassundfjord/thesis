@@ -356,7 +356,7 @@ class TimeseriesDecoder(nn.Module):
             Permuter((0, 2, 1)),
             nn.Linear(old_seq_len, seq_len),
             #nn.BatchNorm1d(seq_len),
-            nn.LeakyReLU(),
+            nn.ReLU(),
             nn.Dropout(dropout),
             Permuter((0, 2, 1))
         ])
@@ -398,7 +398,8 @@ class VideoEncoder(nn.Module):
         for i in range(len(cnn_filters)):
             cnn_layers.append(nn.Conv3d(in_channels, cnn_filters[i], kernel_size = kernel_size, stride = stride, padding = padding))
             cnn_layers.append(nn.LeakyReLU(inplace=True))
-            #cnn_layers.append(nn.BatchNorm3d(cnn_filters[i]))
+            cnn_layers.append(nn.Dropout(dropout))
+            #cnn_layers.append(nn.MaxPool3d(kernel_size = kernel_size, stride = stride, padding = padding))
             in_channels = cnn_filters[i]
 
         self.cnn_encoder = nn.Sequential(*cnn_layers)
@@ -427,7 +428,6 @@ class VideoEncoder(nn.Module):
     def forward(self, x):
         cnn_encoded = self.cnn_encoder(x)
         features = cnn_encoded.view(x.size(0), x.size(2), -1)
-        # Extract features from the input video frames using the backbone
         for layer in self.model:
             features = layer(features)
         return features

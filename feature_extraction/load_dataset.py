@@ -72,7 +72,7 @@ class VideoDataset(Dataset):
         return videos
 
 class DataFrameTimeseriesDataset(Dataset):
-    def __init__(self, dataframes, n_samples = 200):
+    def __init__(self, dataframes, n_samples = 256):
         """
         dataframes: list of dataframes, with missing all columns
         """
@@ -309,10 +309,10 @@ def get_dataloaders(pickle_path, video_path, train_ratio = 0.7, batch_size = 32,
 if __name__ == "__main__":
     start_time = time.time()
     print("Started", flush = True)
-    video_train_loader, video_test_loader, timeseries_train_loader, timeseries_test_loader, l_train, l_test = get_dataloaders(
+    video_train_loader, video_test_loader, timeseries_train_loader, timeseries_test_loader, l_train, l_test, risk_train, risk_test = get_dataloaders(
                                                         '/work5/share/NEDO/nedo-2019/data/processed_rosbags_topickles/fixed_pickles', 
                                                         "/work5/share/NEDO/nedo-2019/data/01_driving_data/movie", 
-                                                        save = False, batch_size=32
+                                                        save = True, batch_size=32
                                                     )
     end_time = time.time() - start_time
     print("Finished, took {} seconds".format(end_time))

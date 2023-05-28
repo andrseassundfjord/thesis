@@ -55,6 +55,7 @@ def run_gmm(X_train, X_test, y_train, y_test, num_classes = 14, norm = False, sa
         print(f"{idx+1} {line}")
 
     cm_norm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+    plt.clf()
     sns.set(font_scale=1.2) # adjust the font size
     sns.heatmap(cm_norm, annot=False, fmt='.2f', xticklabels= label_ticks, yticklabels=label_ticks, cmap='Reds')
     plt.ylabel('True label')
@@ -69,21 +70,27 @@ def prep_timeseries(timeseries):
     for idx, t in enumerate(timeseries):
         nan_mask = torch.isnan(t)
         # Replace NaN values with 0 using boolean masking
-        t[nan_mask] = 0.0
+        t[nan_mask] = -999
         missing_mask = t.eq(-999)
         # Replace -999 with -1
-        t[missing_mask] = 0.0
+        t[missing_mask] = -999
         mask = nan_mask | missing_mask
         masks.append(mask)
         # If features are continous
         if idx in [0, 3, 5]:
-            timeseries[idx] = F.normalize(t, p=1, dim=-1)
+            t[mask] = 0.000000001
+            timeseries[idx] -= timeseries[idx].min(-1, keepdim=True)[0]
+            timeseries[idx] /= torch.add(timeseries[idx].max(-1, keepdim=True)[0], 0.000000001)
+            nans = torch.isnan(timeseries[idx])
+            timeseries[idx][nans] = 0.5
+            t[mask] -999
+
     return timeseries
 
 def get_latent(model, latent_dim, hidden_layers, split_size = 1):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # Define the model architecture
-    model = model(input_dims= [(64 // split_size, 128, 128, 3), (200 // split_size, 352)], latent_dim=latent_dim, 
+    model = model(input_dims= [(64 // split_size, 128, 128, 3), (256 // split_size, 352)], latent_dim=latent_dim, 
                     hidden_layers = hidden_layers, dropout = 0.2).to(device)
     model_name = model.__class__.__name__
 
@@ -199,9 +206,9 @@ def run_gmm_classification(model, latent_dim, hidden_layers, split_size = 1):
 if __name__ == "__main__":
     torch.manual_seed(42)
     np.random.seed(42)
-    latent_dim = 64
+    latent_dim = 2048
     video_hidden_shape = [128, 256, 512, 512]
-    timeseries_hidden_dim = 1024
+    timeseries_hidden_dim = 1051224
     timeseries_num_layers = 3
     hidden_layers = [video_hidden_shape, timeseries_hidden_dim, timeseries_num_layers]
-    run_gmm_classification(TimeBERT, latent_dim, hidden_layers, split_size = 4)
+    run_gmm_classification(MVAE, latent_dim, hidden_layers, split_size = 4)

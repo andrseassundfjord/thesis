@@ -15,6 +15,7 @@ from VideoVAE import VideoVAE
 from VideoAutoencoder import VideoAutoencoder
 from VideoBert import VideoBERT
 from MAE import MAE
+from HMAE import HMAE
 from VideoBERT_pretrained import VideoBERT_pretrained
 import math
 from sklearn.metrics import mean_absolute_percentage_error
@@ -47,15 +48,21 @@ def prep_timeseries(timeseries):
     for idx, t in enumerate(timeseries):
         nan_mask = torch.isnan(t)
         # Replace NaN values with 0 using boolean masking
-        t[nan_mask] = 0.0
+        t[nan_mask] = -999
         missing_mask = t.eq(-999)
         # Replace -999 with -1
-        t[missing_mask] = 0.0
+        t[missing_mask] = -999
         mask = nan_mask | missing_mask
         masks.append(mask)
         # If features are continous
         if idx in [0, 3, 5]:
-            timeseries[idx] = F.normalize(t, p=1, dim=-1)
+            t[mask] = 0.000000001
+            timeseries[idx] -= timeseries[idx].min(-1, keepdim=True)[0]
+            timeseries[idx] /= torch.add(timeseries[idx].max(-1, keepdim=True)[0], 0.000000001)
+            nans = torch.isnan(timeseries[idx])
+            timeseries[idx][nans] = 0.5
+            t[mask] -999
+
     return timeseries
 
 def plot_difference(y_pred, y_true, model_name):
@@ -70,7 +77,7 @@ def train_test_risk(model, epochs = 100, lr = 0.01, latent_dim = 32, hidden_dim 
     print("\nStart risk score fine-tuning")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # Define the model architecture
-    pretrained_model = model(input_dims= [(64 // split_size, 128, 128, 3), (200 // split_size, 352)], latent_dim=latent_dim, 
+    pretrained_model = model(input_dims= [(64 // split_size, 128, 128, 3), (256 // split_size, 352)], latent_dim=latent_dim, 
                     hidden_layers = hidden_layers, dropout= 0.2).to(device)
 
     model_name = pretrained_model.__class__.__name__
@@ -300,4 +307,4 @@ def evaluate(pretrained_model, model_name, latent_dim, hidden_dim, split_size = 
 if __name__ == "__main__":
     torch.manual_seed(42)
     np.random.seed(42)
-    train_test_risk(MVAE, epochs=80, lr=0.1, latent_dim=64, hidden_dim = 1024, hidden_layers=[[128, 256, 512, 512], 512, 3], split_size=4)
+    train_test_risk(MVAE, epochs=80, lr=0.1, latent_dim=2048, hidden_dim = 1024, hidden_layers=[[128, 256, 512, 512], 512, 3], split_size=4)
