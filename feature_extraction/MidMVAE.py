@@ -389,7 +389,7 @@ class VideoEncoder(nn.Module):
         padding = (1, 1, 1)
 
         output_size = input_shape[1]
-        for _ in range(3):
+        for _ in range(4):
             output_size = int((output_size - kernel_size[1] + 2*padding[1])/stride[1]) + 1
 
         cnn_layers = []
@@ -401,7 +401,7 @@ class VideoEncoder(nn.Module):
             cnn_layers.append(nn.Dropout(dropout))
             #cnn_layers.append(nn.MaxPool3d(kernel_size = kernel_size, stride = stride, padding = padding))
             in_channels = cnn_filters[i]
-
+        cnn_layers.append(nn.MaxPool3d(kernel_size = (3, 4, 4), stride = (1, 2, 2), padding = 1))
         self.cnn_encoder = nn.Sequential(*cnn_layers)
 
 

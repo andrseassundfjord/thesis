@@ -1,0 +1,19 @@
+Latent dimension: 64, Hidden dimension 512, Split size 4
+Started: MidMVAE_reduced_parameters, Augmented run
+Using device: cuda
+Model: MidMVAE
+Number of parameters in model:  143827141
+torch.cuda.memory_allocated: 0.535810GB
+torch.cuda.memory_reserved: 0.542969GB
+torch.cuda.max_memory_reserved: 0.542969GB
+Start training
+Time taken: 1603.79 seconds
+Epoch: 9 	 Train Loss: 280038.383324	 Test Loss: 280201.303395
+Time taken: 3018.95 seconds
+Epoch: 19 	 Train Loss: 249646.791955	 Test Loss: 231373.171759
+Time taken: 4427.80 seconds
+Epoch: 29 	 Train Loss: 216185.759723	 Test Loss: 218196.309414
+Time taken: 5838.96 seconds
+Epoch: 39 	 Train Loss: 214799.636654	 Test Loss: 216944.559877
+Time taken: 7300.35 seconds
+Epoch: 49 	 Train Loss: 209667.031566	 Test Loss: 219416.612191

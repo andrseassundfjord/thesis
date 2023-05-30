@@ -11,7 +11,7 @@ class VideoBERT(nn.Module):
         padding = (1, 1, 1)
         transformer_layers = 2
         output_size = input_dims[0][1]
-        for _ in range(3):
+        for _ in range(4):
             output_size = int((output_size - kernel_size[1] + 2*padding[1])/stride[1]) + 1
         self.transformer_d_model = hidden_layers[0][-1]
         transformer_num_heads = 8
@@ -26,6 +26,7 @@ class VideoBERT(nn.Module):
             cnn_layers.append(nn.LeakyReLU(inplace=True))
             #cnn_layers.append(nn.BatchNorm3d(cnn_filters[i]))
             in_channels = cnn_filters[i]
+        cnn_layers.append(nn.MaxPool3d(kernel_size = (3, 4, 4), stride = (1, 2, 2), padding = 1))
         self.cnn_encoder = nn.Sequential(*cnn_layers)
 
         self.fc_middle = nn.Linear(in_channels * output_size ** 2, self.transformer_d_model)

@@ -29,7 +29,6 @@ def run_cluster(X, y, K = 14, norm = True, savename = "model"):
     """
     Takes latent vectors and labels as input, returns accuracy of k means clustering
     """
-
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", message="Exited postprocessing with accuracies")
         #warnings.filterwarnings("ignore", "Graph is not fully connected, spectral embedding may not work as expected.")
@@ -243,7 +242,7 @@ def get_latent(model, latent_dim, hidden_layers, split_size = 1):
                     recon_video, recon_timeseries, kl_divergence, latent_representation, mus = model([video, timeseries])
                     latent = mus
                 
-                latents.append(latent.to("cpu"))
+                latents.append(latent_representation.to("cpu"))
                 labels.append(label.to("cpu"))
 
     latents = torch.cat(latents, dim = 0)
@@ -284,9 +283,9 @@ if __name__ == "__main__":
     print("Run Cluster")
     torch.manual_seed(42)
     np.random.seed(42)
-    latent_dim = 2048
+    latent_dim = 32
     video_hidden_shape = [128, 256, 512, 512]
-    timeseries_hidden_dim = 512
+    timeseries_hidden_dim = 1024
     timeseries_num_layers = 3
     hidden_layers = [video_hidden_shape, timeseries_hidden_dim, timeseries_num_layers]
-    run_clustering(MVAE, latent_dim, hidden_layers, split_size = 4)
+    run_clustering(TimeBERT, latent_dim, hidden_layers, split_size = 4)

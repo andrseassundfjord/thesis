@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
+import torch.nn.init as init
 import torch.optim as optim
 from load_dataset import get_dataloaders, VideoDataset, DataFrameTimeseriesDataset, LabelDataset
 import torch.nn.functional as F
@@ -32,13 +33,16 @@ def reg_loss(model):
 class SimpleModel(nn.Module):
     def __init__(self, input_dim, hidden_dim):
         super(SimpleModel, self).__init__()
-        self.fc1 = nn.Linear(input_dim, hidden_dim)
-        self.fc2 = nn.Linear(hidden_dim, 1)  # num_classes is the number of classes in your classification task
+        self.fc1 = nn.Linear(input_dim, 1)
+        #self.fc2 = nn.Linear(hidden_dim, 1)  # num_classes is the number of classes in your classification task
+
+        init.uniform_(self.fc1.weight)
+        #init.uniform_(self.fc2.weight)
         
     def forward(self, x):
         x = self.fc1(x)
-        x = nn.functional.leaky_relu(x)
-        x = self.fc2(x)
+        #x = nn.functional.relu(x)
+        #x = self.fc2(x)
         x = 10 * torch.sigmoid(x) - 5
         x = x.view(-1)
         return x
@@ -72,6 +76,15 @@ def plot_difference(y_pred, y_true, model_name):
     plt.xlabel('Difference')
     plt.ylabel('Frequency')
     plt.savefig(f"results/riskScore_results/{model_name}") 
+    plt.clf()
+    x = np.linspace(1, len(y_pred), len(y_pred))
+    fig, ax = plt.subplots()
+    ax.plot(x, y_pred, color="red", marker="o", label="Predicted")
+    ax.plot(x, y_true, ls="--", color="blue", marker="x", label="True value")
+    ax.set_ylabel("Risk score")
+    ax.set_xlabel("Data sample")
+    ax.legend()
+    plt.savefig(f"results/riskScore_results/{model_name}_scatter")
 
 def train_test_risk(model, epochs = 100, lr = 0.01, latent_dim = 32, hidden_dim = 512, hidden_layers = [[128, 256, 512, 512], 256, 3], split_size = 1):
     print("\nStart risk score fine-tuning")
@@ -156,9 +169,9 @@ def train_test_risk(model, epochs = 100, lr = 0.01, latent_dim = 32, hidden_dim 
                     recon_video, recon_timeseries, kl_divergence, latent_representation, mus = pretrained_model([video, timeseries])
                     latent = mus
             
-                output = simple_model(latent)
+                output = simple_model(latent_representation)
                 loss += criterion(output, riskScore)
-            loss += reg_loss(simple_model)
+            #loss += reg_loss(simple_model)
             
             train_loss += loss.item()
             loss.backward()
@@ -203,9 +216,9 @@ def train_test_risk(model, epochs = 100, lr = 0.01, latent_dim = 32, hidden_dim 
                         recon_video, recon_timeseries, kl_divergence, latent_representation, mus = pretrained_model([video, timeseries])
                         latent = mus
                     
-                    output = simple_model(latent)
+                    output = simple_model(latent_representation)
                     loss += criterion(output, riskScore)
-                loss += reg_loss(simple_model)
+                #loss += reg_loss(simple_model)
                 test_loss += loss.item()
         # lr schedule step
         scheduler.step(test_loss) # For plateau
@@ -287,7 +300,7 @@ def evaluate(pretrained_model, model_name, latent_dim, hidden_dim, split_size = 
                     recon_video, recon_timeseries, kl_divergence, latent_representation, mus = pretrained_model([video, timeseries])
                     latent = mus
                 
-                output = simple_model(latent)
+                output = simple_model(latent_representation)
 
                 y_preds.append(output.to("cpu"))
                 riskScore = torch.tensor([float(r) for r in riskScore])

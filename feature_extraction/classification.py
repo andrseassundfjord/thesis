@@ -32,19 +32,19 @@ def reg_loss(model):
     return 0.1 * reg_loss 
 
 class SimpleModel(nn.Module):
-    def __init__(self, input_dim, hidden_dim, num_classes_list):
+    def __init__(self, input_dim, hidden_dim, num_classes):
         super(SimpleModel, self).__init__()
-        self.fc1 = nn.Linear(input_dim, hidden_dim)
-        self.fc2 = nn.Linear(hidden_dim, num_classes_list)
+        self.fc1 = nn.Linear(input_dim, num_classes)
+        #self.fc2 = nn.Linear(hidden_dim, num_classes)
 
-        init.uniform(self.fc1.weight, nonlinearity='relu')
-        init.uniform(self.fc2.weight, nonlinearity='relu')
+        init.uniform_(self.fc1.weight)
+        #init.uniform_(self.fc2.weight)
     
     def forward(self, x):
         x = self.fc1(x)
         x = nn.functional.relu(x)
-        x = self.fc2(x)
-        x = nn.functional.relu(x)
+        #x = self.fc2(x)
+        #x = nn.functional.relu(x)
         #x = nn.functional.softmax(x, dim=1)
         return x
 
@@ -168,7 +168,7 @@ def train_test_classification(model, epochs = 100, lr = 0.1, latent_dim = 32, hi
                     recon_video, recon_timeseries, kl_divergence, latent_representation, mus = pretrained_model([video, timeseries])
                     latent = mus
 
-                output = simple_model(latent)
+                output = simple_model(latent_representation)
                 loss += criterion(output, label)
             
             #loss += reg_loss(simple_model)
@@ -225,7 +225,7 @@ def train_test_classification(model, epochs = 100, lr = 0.1, latent_dim = 32, hi
                         recon_video, recon_timeseries, kl_divergence, latent_representation, mus = pretrained_model([video, timeseries])
                         latent = mus
 
-                    output = simple_model(latent)
+                    output = simple_model(latent_representation)
                     loss += criterion(output, label)
                 #loss += reg_loss(simple_model)
                 test_loss += loss.item()
@@ -254,7 +254,7 @@ def train_test_classification(model, epochs = 100, lr = 0.1, latent_dim = 32, hi
     evaluate(pretrained_model, model_name, latent_dim = latent_dim, hidden_dim = hidden_dim, split_size = split_size, classes_list = classes_list)
 
 def evaluate(pretrained_model, model_name, latent_dim = 32, hidden_dim = 256, split_size = 1, classes_list = []):
-    print("Start evaluation", flush = True)
+    print("Start evaluation, classes for ", classes_list, flush = True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # load simple model
     if model_name == "MAE" or model_name == "HMAE":
@@ -326,9 +326,8 @@ def evaluate(pretrained_model, model_name, latent_dim = 32, hidden_dim = 256, sp
                     recon_video, recon_timeseries, kl_divergence, latent_representation, mus = pretrained_model([video, timeseries])
                     latent = mus
                 
-                output = simple_model(latent)
+                output = simple_model(latent_representation)
                 y_pred = torch.argmax(output, dim = 1)
-                y_pred = torch.add(y_pred, 1)
 
                 y_preds.append(y_pred.to("cpu"))
                 labels.append(label)
@@ -374,4 +373,4 @@ if __name__ == "__main__":
     np.random.seed(42)
     hidden = 512
     latent_dim = 32
-    train_test_classification(MVAE, epochs=40, lr=0.1, latent_dim=latent_dim, hidden_dim = 1024, hidden_layers=[[128, 256, 512, 512], hidden, 3], split_size=4, classes_list = [1, 5])
+    train_test_classification(MAE, epochs=50, lr=0.1, latent_dim=latent_dim, hidden_dim = 1024, hidden_layers=[[128, 256, 512, 512], hidden, 3], split_size=4, classes_list = [1, 5, 9])

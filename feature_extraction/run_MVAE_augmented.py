@@ -51,7 +51,7 @@ def reg_loss(model):
     for param in model.parameters():
         reg_loss += torch.sum(torch.square(param))
     # Total loss
-    return 0.1 * reg_loss
+    return 0.001 * reg_loss
 
 def mape_calc(y_true, y_pred):
     if len(y_true.size()) < 3:
@@ -512,9 +512,15 @@ def plot_num_frames(num_frames):
 
 if __name__ == "__main__":
 
-    model_arg = MAE
-    latent_dim = 32
-    video_hidden_shape = [128, 256, 512, 512]
+    """
+    Test:
+    1. -999 -> -99 -> -9
+    2. latent 32 if positive results
+    """
+
+    model_arg = VideoAutoencoder
+    latent_dim = 64
+    video_hidden_shape = [64, 128, 256, 512]
     timeseries_hidden_dim = 512
     timeseries_num_layers = 3
     hidden_layers = [video_hidden_shape, timeseries_hidden_dim, timeseries_num_layers]
@@ -523,7 +529,7 @@ if __name__ == "__main__":
     print(f"Latent dimension: {latent_dim}, Hidden dimension {timeseries_hidden_dim}, Split size {split_size}")
 
     run(
-        "MAE_rerun",
+        "VideoAE_reduced_parameters",
         load = True, # Load dataloaders
         train_ratio = 0.7,
         batch_size = 32,
@@ -542,8 +548,9 @@ if __name__ == "__main__":
 
     run_clustering(model_arg, latent_dim, hidden_layers, split_size = split_size)
     run_gmm_classification(model_arg, latent_dim, hidden_layers, split_size = split_size)
+    run_gmm_classification(model_arg, latent_dim, hidden_layers, split_size = split_size, classes_list=[1, 5, 9])
     train_test_classification(model_arg, epochs=60, lr=0.1, latent_dim=latent_dim, hidden_dim=1024, hidden_layers=hidden_layers, split_size = split_size)
-    train_test_classification(model_arg, epochs=60, lr=0.1, latent_dim=latent_dim, hidden_dim=1024, hidden_layers=hidden_layers, split_size = split_size, classes_list=[1, 5, 7])
+    train_test_classification(model_arg, epochs=60, lr=0.1, latent_dim=latent_dim, hidden_dim=1024, hidden_layers=hidden_layers, split_size = split_size, classes_list=[1, 5, 9])
     train_test_risk(model_arg, epochs=60, lr=0.1, latent_dim=latent_dim, hidden_dim=1024, hidden_layers=hidden_layers, split_size = split_size)
 
     print("\nFinished")

@@ -27,7 +27,23 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import confusion_matrix, f1_score
 import seaborn as sns
 
-def run_gmm(X_train, X_test, y_train, y_test, num_classes = 14, norm = False, savename = "model"):
+def run_gmm(X_train, X_test, y_train, y_test, num_classes = 14, norm = False, savename = "model", classes_list = None):
+    masks = []
+    for val in classes_list:
+        masks.append(y_train.eq(val))
+    mask = masks[0]
+    for m in masks[1:]:
+        mask = mask | m
+    X_train = X_train[mask]
+    y_train = y_train[mask]
+    masks = []
+    for val in classes_list:
+        masks.append(y_test.eq(val))
+    mask = masks[0]
+    for m in masks[1:]:
+        mask = mask | m
+    X_test = X_test[mask]
+    y_test = y_test[mask]
     # Initialize and fit the GMM
     gmm = GaussianMixture(n_components=num_classes)  # num_classes is the number of classes in your classification task
     gmm.fit(X_train)
@@ -45,7 +61,7 @@ def run_gmm(X_train, X_test, y_train, y_test, num_classes = 14, norm = False, sa
 
     cm = confusion_matrix(y_test, y_pred)
     f1 = f1_score(y_test, y_pred, average="weighted")
-    label_ticks = [str(i) for i in range(1, 15)]
+    label_ticks = [str(i) for i in classes_list]
 
     print(f"\nEvaluation of GMM classification\n")
 
@@ -196,11 +212,13 @@ def get_latent(model, latent_dim, hidden_layers, split_size = 1):
 
     return X_train, y_train, X_test, y_test, model_name
 
-def run_gmm_classification(model, latent_dim, hidden_layers, split_size = 1):
+def run_gmm_classification(model, latent_dim, hidden_layers, split_size = 1, classes_list = None):
+    if classes_list == None:
+        classes_list = range(14)
     print("Started GMM classification")
     X_train, y_train, X_test, y_test, model_name = get_latent(model, latent_dim, hidden_layers, split_size)
     print("Latent representations ready")
-    run_gmm(X_train = X_train, X_test = X_test, y_train = y_train, y_test = y_test, num_classes=14, norm = False, savename = model_name)
+    run_gmm(X_train = X_train, X_test = X_test, y_train = y_train, y_test = y_test, num_classes=len(classes_list), norm = False, savename = model_name, classes_list = classes_list)
     print("Finished GMM Classification for ", model_name)
 
 if __name__ == "__main__":

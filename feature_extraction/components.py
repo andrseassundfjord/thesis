@@ -39,9 +39,10 @@ class VideoEncoder(nn.Module):
             nn.Conv3d(self.hs[1], self.hs[2], kernel_size = 4, stride = 2, padding = 1),
             #nn.BatchNorm3d(self.hs[2]),
             nn.LeakyReLU(),
+            nn.MaxPool3d(kernel_size = (3, 4, 4), stride = (1, 2, 2), padding = 1),
             Flatten(),
             nn.Dropout(dropout),
-            nn.Linear(int(self.hs[2] * self.width * self.height * self.n_frames / (8 ** 3)), self.hs[3]),
+            nn.Linear(int(self.hs[2] * self.width * self.height * self.n_frames / (8 * 16 * 16)), self.hs[3]),
             #nn.BatchNorm1d(self.hs[3]),
             nn.LeakyReLU()
         ])
