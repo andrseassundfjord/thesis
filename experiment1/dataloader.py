@@ -27,9 +27,11 @@ def plot_compare_timestamps(n_samples = 200, original = "results/original_rate.c
     df = df.reset_index()
     # Create a figure and subplots
     fig, ax = plt.subplots()
-    ax.plot(df.index, df[feature_name], color="red", marker="o")
-    ax.plot(df.index, df[feature_name + "_sampled"], ls="--", color="blue", marker="x")
+    ax.plot(df.index, df[feature_name], color="red", marker="o", label="Original")
+    ax.plot(df.index, df[feature_name + "_sampled"], ls="--", color="blue", marker="x", label="Re-sampled")
     ax.set_title(f"{n_samples} samples")
+    #ax.set_ylabel("Rate" if interpolate else "State")
+    #ax.set_xlabel("Timestep")
     fig.canvas.draw()
     buffer = np.array(fig.canvas.buffer_rgba())
     plt.close(fig)
@@ -106,20 +108,26 @@ def plot_together():
     """
     path = "/work5/share/NEDO/nedo-2019/data/processed_rosbags_topickles/fixed_pickles"
     # Call the plot function for each dataset
+    plt.rcParams.update({'font.size': 36, "xtick.labelsize": 24, "ytick.labelsize": 24, "axes.titlesize": 28, "figure.titlesize": 28})
     fig1 = save_single_df(path, n_samples=50, test = True, interpolate=True)
     fig2 = save_single_df(path, n_samples=100, test = True, interpolate=True)
     fig3 = save_single_df(path, n_samples=150, test = True, interpolate=True)
     fig4 = save_single_df(path, n_samples=200, test = True, interpolate=True)
     # Combine the subplots into a grid
-    fig = plt.figure(figsize=(8, 8))
-    fig.suptitle("Blink rate")
+    fig = plt.figure(figsize=(15, 12))
+    #fig.suptitle("Blink rate")
 
     for i, f in enumerate([fig1, fig2, fig3, fig4]):
         ax = fig.add_subplot(2, 2, i+1)
         ax.imshow(f)
         ax.axis('off')
+        #ax.set_ylabel('Rate')
+        #ax.set_xlabel('Timestep')
+        #ax.legend()
 
     fig.tight_layout()
+    fig.text(0.5, 0.04, 'Timestep', ha='center')
+    fig.text(0.01, 0.5, 'Blink rate', va='center', rotation='vertical')
 
     print("finished first", flush = True)
     plt.savefig("results/blink_rate_resampled_all")
@@ -131,14 +139,19 @@ def plot_together():
     fig4 = save_single_df(path, n_samples=200, test = True, interpolate=False)
     
     # Combine the subplots into a grid
-    fig = plt.figure(figsize=(8, 8))
-    fig.suptitle("Turn signal")
+    fig = plt.figure(figsize=(15, 12))
+    #fig.suptitle("Turn signal")
     for i, f in enumerate([fig1, fig2, fig3, fig4]):
         ax = fig.add_subplot(2, 2, i+1)
         ax.imshow(f)
         ax.axis('off')
+        #ax.set_xlabel('State')
+        #ax.set_xlabel('Timestep')
+        #ax.legend()
 
     fig.tight_layout()
+    fig.text(0.5, 0.04, 'Timestep', ha='center')
+    fig.text(0.01, 0.5, 'Turn signal state', va='center', rotation='vertical')
 
     plt.savefig("results/lanes_resampled_all")
 
@@ -225,29 +238,29 @@ def plot_statistics(path="results/"):
     # Plot mean
     values = np.asarray(feature_stats["mean"], dtype="float")
     plt.hist(values, bins = int(len(values)/2))
-    plt.xlabel('Mean number of Samples')
-    plt.ylabel('Number of Features')
+    plt.xlabel('Mean number of samples')
+    plt.ylabel('Number of features')
     plt.savefig(path + "feature_stats_mean_samples")
     plt.clf()
     # Plot median
     values = np.asarray(feature_stats["median"], dtype="float")
     plt.hist(values, bins = int(len(values)/2))
-    plt.xlabel('Median number of Samples')
-    plt.ylabel('Number of Features')
+    plt.xlabel('Median number of samples')
+    plt.ylabel('Number of features')
     plt.savefig(path + "feature_stats_median_samples")
     plt.clf()
     # Plot std
     values = np.asarray(feature_stats["std"], dtype="float")
     plt.hist(values, bins = int(len(values)/2))
-    plt.xlabel('Standard deviation of number of Samples')
-    plt.ylabel('Number of Features')
+    plt.xlabel('Standard deviation of number of samples')
+    plt.ylabel('Number of features')
     plt.savefig(path + "feature_stats_std_samples")
     plt.clf()
     # Plot number of times feature is present
     values = np.asarray(feature_stats["n_present"], dtype="float")
     plt.hist(values, bins = int(len(values)/2))
-    plt.xlabel('Number of Samples present in')
-    plt.ylabel('Number of Features')
+    plt.xlabel('Number of data samples present in')
+    plt.ylabel('Number of features')
     plt.savefig(path + "feature_stats_present_samples")
     plt.clf()
     # Plot distribution of sample sizes
@@ -350,7 +363,8 @@ if __name__ == "__main__":
     #plot_statistics()
     #get_dataset_statistics()
     #get_n_samples()
-    compute_sample_correlation(n_files = 2000)
+    #compute_sample_correlation(n_files = 2000)
     #save_single_df(path, n_samples = 200, test=False, interpolate = True, normalize = True)
     #get_feature_names()
-    #plot_together()
+    plot_together()
+    print("Finished")
