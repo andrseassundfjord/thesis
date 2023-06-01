@@ -108,11 +108,11 @@ def plot_together():
     """
     path = "/work5/share/NEDO/nedo-2019/data/processed_rosbags_topickles/fixed_pickles"
     # Call the plot function for each dataset
-    plt.rcParams.update({'font.size': 36, "xtick.labelsize": 24, "ytick.labelsize": 24, "axes.titlesize": 28, "figure.titlesize": 28})
-    fig1 = save_single_df(path, n_samples=50, test = True, interpolate=True)
-    fig2 = save_single_df(path, n_samples=100, test = True, interpolate=True)
-    fig3 = save_single_df(path, n_samples=150, test = True, interpolate=True)
-    fig4 = save_single_df(path, n_samples=200, test = True, interpolate=True)
+    plt.rcParams.update({'font.size': 32, "xtick.labelsize": 24, "ytick.labelsize": 24, "axes.titlesize": 28, "figure.titlesize": 28})
+    fig1 = save_single_df(path, n_samples=100, test = True, interpolate=True)
+    fig2 = save_single_df(path, n_samples=150, test = True, interpolate=True)
+    fig3 = save_single_df(path, n_samples=200, test = True, interpolate=True)
+    fig4 = save_single_df(path, n_samples=256, test = True, interpolate=True)
     # Combine the subplots into a grid
     fig = plt.figure(figsize=(15, 12))
     #fig.suptitle("Blink rate")
@@ -126,7 +126,7 @@ def plot_together():
         #ax.legend()
 
     fig.tight_layout()
-    fig.text(0.5, 0.04, 'Timestep', ha='center')
+    fig.text(0.5, 0.02, 'Timestep', ha='center')
     fig.text(0.01, 0.5, 'Blink rate', va='center', rotation='vertical')
 
     print("finished first", flush = True)
@@ -160,6 +160,7 @@ def get_n_samples():
     Function for counting number of samples for each feature in each video. 
     Also for calculating mean, median and std of this.
     """
+    plt.rcParams.update({'font.size': 28, "xtick.labelsize": 24, "ytick.labelsize": 24, "axes.titlesize": 28, "figure.titlesize": 28})
     path = "/work5/share/NEDO/nedo-2019/data/processed_rosbags_topickles/fixed_pickles"
     files = os.listdir(path)
     n_files = len(files)
@@ -225,42 +226,58 @@ def get_dataset_statistics():
     class_statistics.to_csv("results/class_statistics.csv")
 
 def plot_statistics(path="results/"):
+    #plt.rcParams.update({'font.size': 22})
     feature_stats = pd.read_csv(path + "feature_sample_size_statistics.csv").set_index("Unnamed: 0")
     #feature_stats = feature_stats.drop(columns = ["Unnamed: 0"])
     class_stats = pd.read_csv(path + "class_statistics.csv")
     # Plot class stats
     plt.bar(range(1, 15), class_stats["class_counter"])
-    plt.xticks(np.arange(1, 15, 1))
-    plt.xlabel('Class')
-    plt.ylabel('Occurences in NEDO-2019')
+    #plt.xticks(np.arange(1, 15, 1))
+    plt.xlabel('Class', fontsize=16)
+    plt.ylabel('Occurences', fontsize=16)
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    #plt.figure(figsize=(24, 18))
     plt.savefig(path + "class_stats")
     plt.clf()
     # Plot mean
     values = np.asarray(feature_stats["mean"], dtype="float")
     plt.hist(values, bins = int(len(values)/2))
-    plt.xlabel('Mean number of samples')
-    plt.ylabel('Number of features')
+    plt.xlabel('Mean number of samples', fontsize=16)
+    plt.ylabel('Number of features', fontsize=16)
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    #plt.figure(figsize=(22, 18))
     plt.savefig(path + "feature_stats_mean_samples")
     plt.clf()
     # Plot median
     values = np.asarray(feature_stats["median"], dtype="float")
     plt.hist(values, bins = int(len(values)/2))
-    plt.xlabel('Median number of samples')
-    plt.ylabel('Number of features')
+    plt.xlabel('Median number of samples', fontsize=16)
+    plt.ylabel('Number of features', fontsize=16)
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    #plt.figure(figsize=(20, 16))
     plt.savefig(path + "feature_stats_median_samples")
     plt.clf()
     # Plot std
     values = np.asarray(feature_stats["std"], dtype="float")
     plt.hist(values, bins = int(len(values)/2))
-    plt.xlabel('Standard deviation of number of samples')
-    plt.ylabel('Number of features')
+    plt.xlabel('Standard deviation of number of samples', fontsize=16)
+    plt.ylabel('Number of features', fontsize=16)
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    #plt.figure(figsize=(26, 20))
     plt.savefig(path + "feature_stats_std_samples")
     plt.clf()
     # Plot number of times feature is present
     values = np.asarray(feature_stats["n_present"], dtype="float")
     plt.hist(values, bins = int(len(values)/2))
-    plt.xlabel('Number of data samples present in')
-    plt.ylabel('Number of features')
+    plt.xlabel('Number of data samples present in', fontsize=16)
+    plt.ylabel('Number of features', fontsize=16)
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    #plt.figure(figsize=(28, 22))
     plt.savefig(path + "feature_stats_present_samples")
     plt.clf()
     # Plot distribution of sample sizes
@@ -360,11 +377,11 @@ def get_feature_names():
 
 if __name__ == "__main__":
     path = "/work5/share/NEDO/nedo-2019/data/processed_rosbags_topickles/fixed_pickles"
-    #plot_statistics()
+    plot_statistics()
     #get_dataset_statistics()
     #get_n_samples()
     #compute_sample_correlation(n_files = 2000)
     #save_single_df(path, n_samples = 200, test=False, interpolate = True, normalize = True)
     #get_feature_names()
-    plot_together()
+    #plot_together()
     print("Finished")
