@@ -48,7 +48,7 @@ def mask_features(tensor, batch_size, num_features):
         if generate_random(num_features, p = p) == 1:
             batch_idx = random.randint(0, masked.size(0) - 1)
             feature_idx = random.randint(0, masked.size(2) - 1)
-            masked[batch_idx, :, feature_idx] = -999
+            masked[batch_idx, :, feature_idx] = -99
     return masked
 
 def reg_loss(model):
@@ -173,8 +173,8 @@ def run(
                     nan_mask = torch.isnan(t)
                     # Replace NaN values with 0 using boolean masking
                     t[nan_mask] = 0.0
-                    missing_mask = t.eq(-999)
-                    # Replace -999 with -1
+                    missing_mask = t.eq(-99)
+                    # Replace -99 with -1
                     t[missing_mask] = 0.0
                     mask = nan_mask | missing_mask
                     masks.append(mask)
@@ -201,8 +201,8 @@ def run(
                     nan_mask = torch.isnan(t)
                     # Replace NaN values with 0 using boolean masking
                     t[nan_mask] = 0.0
-                    missing_mask = t.eq(-999)
-                    # Replace -999 with -1
+                    missing_mask = t.eq(-99)
+                    # Replace -99 with -1
                     t[missing_mask] = 0.0
                     mask = nan_mask | missing_mask
                     masks.append(mask)
@@ -234,8 +234,8 @@ def run(
                     nan_mask = torch.isnan(t)
                     # Replace NaN values with 0 using boolean masking
                     t[nan_mask] = 0.0
-                    missing_mask = t.eq(-999)
-                    # Replace -999 with -1
+                    missing_mask = t.eq(-99)
+                    # Replace -99 with -1
                     t[missing_mask] = 0.0
                     mask = nan_mask | missing_mask
                     masks.append(mask)
@@ -291,7 +291,7 @@ def run(
                         nan_mask = torch.isnan(t)
                         # Replace NaN values with 0 using boolean masking
                         t[nan_mask] = 0.0
-                        missing_mask = t.eq(-999)
+                        missing_mask = t.eq(-99)
                         t[missing_mask] = 0.0
                         mask = nan_mask | missing_mask
                         masks.append(mask)
@@ -322,7 +322,7 @@ def run(
                         nan_mask = torch.isnan(t)
                         # Replace NaN values with 0 using boolean masking
                         t[nan_mask] = 0.0
-                        missing_mask = t.eq(-999)
+                        missing_mask = t.eq(-99)
                         t[missing_mask] = 0.0
                         mask = nan_mask | missing_mask
                         masks.append(mask)
@@ -358,8 +358,8 @@ def run(
                         nan_mask = torch.isnan(t)
                         # Replace NaN values with 0 using boolean masking
                         t[nan_mask] = 0.0
-                        missing_mask = t.eq(-999)
-                        # Replace -999 with -1
+                        missing_mask = t.eq(-99)
+                        # Replace -99 with -1
                         t[missing_mask] = 0.0
                         mask = nan_mask | missing_mask
                         masks.append(mask)

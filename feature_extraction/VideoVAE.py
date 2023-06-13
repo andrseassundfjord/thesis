@@ -10,16 +10,18 @@ class VideoVAE(nn.Module):
         self.video_input_shape = input_dims[0]
         self.hidden_shape = hidden_layers[0]
         # Encoder
-        self.video_encoder = VideoEncoderPretrained(latent_dim = latent_dim, 
+        self.video_encoder = VideoEncoder(latent_dim = latent_dim, 
                                             input_shape = self.video_input_shape, 
                                             hidden_shape = self.hidden_shape,
-                                            dropout = dropout
+                                            dropout = dropout,
+                                            hidden_dim = hidden_layers[1]
                                         )
         # Decoder
         self.video_decoder = VideoDecoder(latent_dim = latent_dim, 
                                             input_shape = self.video_input_shape, 
                                             hidden_shape = self.hidden_shape,
-                                            dropout = dropout
+                                            dropout = dropout,
+                                            hidden_dim = hidden_layers[1]
                                         )
 
     def forward(self, video):

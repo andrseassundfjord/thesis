@@ -11,6 +11,7 @@ from load_dataset import get_dataloaders, VideoDataset, DataFrameTimeseriesDatas
 import torch.nn.functional as F
 # Import models
 from MVAE import MVAE
+from HMAE import HMAE
 from MAE import MAE
 from TimeBERT import TimeBERT
 from MidMVAE import MidMVAE
@@ -24,7 +25,7 @@ from sklearn.decomposition import PCA
 from mpl_toolkits.mplot3d import Axes3D
 from sklearn.mixture import GaussianMixture
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import confusion_matrix, f1_score
+from sklearn.metrics import confusion_matrix, f1_score, accuracy_score
 import seaborn as sns
 
 def run_gmm(X_train, X_test, y_train, y_test, num_classes = 14, norm = False, savename = "model", classes_list = None):
@@ -61,35 +62,41 @@ def run_gmm(X_train, X_test, y_train, y_test, num_classes = 14, norm = False, sa
 
     cm = confusion_matrix(y_test, y_pred)
     f1 = f1_score(y_test, y_pred, average="weighted")
+    acc = accuracy_score(y_test, y_pred)
     label_ticks = [str(i) for i in classes_list]
 
     print(f"\nEvaluation of GMM classification\n")
 
-    print("Confusion matrix")
-    print(label_ticks)
-    for idx, line in enumerate(cm):
-        print(f"{idx+1} {line}")
+    #print("Confusion matrix")
+    #print(label_ticks)
+    #for idx, line in enumerate(cm):
+    #    print(f"{idx+1} {line}")
 
     cm_norm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
     plt.clf()
     sns.set(font_scale=1.2) # adjust the font size
     sns.heatmap(cm_norm, annot=False, fmt='.2f', xticklabels= label_ticks, yticklabels=label_ticks, cmap='Reds')
-    plt.ylabel('True label')
-    plt.xlabel('Predicted label')
+    plt.ylabel('True label', fontsize = 14)
+    plt.xlabel('Predicted label', fontsize = 14)
+    plt.xticks(fontsize=10)
+    plt.yticks(fontsize=10)
     #plt.title('Confusion Matrix')
     plt.savefig(f"results/gmm/{savename}_confusion_matrix_gmm")
     
     print(f"F1 Score: {f1}")
+    print(f"Accuracy: {acc}")
+
+    return f1, acc
 
 def prep_timeseries(timeseries):
     masks = []
     for idx, t in enumerate(timeseries):
         nan_mask = torch.isnan(t)
         # Replace NaN values with 0 using boolean masking
-        t[nan_mask] = -999
-        missing_mask = t.eq(-999)
-        # Replace -999 with -1
-        t[missing_mask] = -999
+        t[nan_mask] = -99
+        missing_mask = t.eq(-99)
+        # Replace -99 with -1
+        t[missing_mask] = -99
         mask = nan_mask | missing_mask
         masks.append(mask)
         # If features are continous
@@ -99,14 +106,14 @@ def prep_timeseries(timeseries):
             timeseries[idx] /= torch.add(timeseries[idx].max(-1, keepdim=True)[0], 0.000000001)
             nans = torch.isnan(timeseries[idx])
             timeseries[idx][nans] = 0.5
-            t[mask] -999
+            t[mask] -99
 
     return timeseries
 
 def get_latent(model, latent_dim, hidden_layers, split_size = 1):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # Define the model architecture
-    model = model(input_dims= [(64 // split_size, 128, 128, 3), (256 // split_size, 352)], latent_dim=latent_dim, 
+    model = model(input_dims= [(64 // split_size, 256, 256, 3), (256 // split_size, 352)], latent_dim=latent_dim, 
                     hidden_layers = hidden_layers, dropout = 0.2).to(device)
     model_name = model.__class__.__name__
 
@@ -218,15 +225,27 @@ def run_gmm_classification(model, latent_dim, hidden_layers, split_size = 1, cla
     print("Started GMM classification")
     X_train, y_train, X_test, y_test, model_name = get_latent(model, latent_dim, hidden_layers, split_size)
     print("Latent representations ready")
-    run_gmm(X_train = X_train, X_test = X_test, y_train = y_train, y_test = y_test, num_classes=len(classes_list), norm = False, savename = model_name, classes_list = classes_list)
+    return run_gmm(X_train = X_train, X_test = X_test, y_train = y_train, y_test = y_test, num_classes=len(classes_list), norm = False, savename = model_name, classes_list = classes_list)
     print("Finished GMM Classification for ", model_name)
 
 if __name__ == "__main__":
     torch.manual_seed(42)
     np.random.seed(42)
-    latent_dim = 2048
-    video_hidden_shape = [128, 256, 512, 512]
-    timeseries_hidden_dim = 1051224
-    timeseries_num_layers = 3
+    latent_dim = 32
+    video_hidden_shape = [32, 64, 128, 256]
+    timeseries_hidden_dim = 512
+    timeseries_num_layers = 2
     hidden_layers = [video_hidden_shape, timeseries_hidden_dim, timeseries_num_layers]
-    run_gmm_classification(MVAE, latent_dim, hidden_layers, split_size = 4)
+    #run_gmm_classification(VideoAutoencoder, latent_dim, hidden_layers, split_size = 4)
+    f1_list = []
+    acc_list = []
+    for i in range(1):
+        f1, acc = run_gmm_classification(HMAE, latent_dim, hidden_layers, split_size = 4, classes_list=[1, 5, 9])
+        f1_list.append(f1)
+        acc_list.append(acc)
+    f1_list = np.array(f1_list)
+    acc_list = np.array(acc_list)
+    print(f"F1: \n Mean: {np.mean(f1_list)}, std: {np.std(f1_list)}")
+    print(f"Accuracy: \n Mean: {np.mean(acc_list)}, std: {np.std(acc_list)}")
+    print(f1_list)
+    print(acc_list)

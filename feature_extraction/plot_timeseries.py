@@ -13,9 +13,10 @@ from MVAE import MVAE
 from MAE import MAE
 from MidMVAE import MidMVAE
 import torch.nn.functional as F
+from PIL import Image
 
 def make_plots(tensors, model_name):
-    x_np = np.linspace(1, 50, 50)
+    x_np = np.linspace(1, 64, 64)
     fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(10, 8))
     # Plot the first subplot
     axes[0, 0].plot(x_np, tensors[0], label='Reconstructed')
@@ -66,6 +67,11 @@ def save_video(video, decoded, split_size, model_name):
     video = video.squeeze(0)
     video = video * 255.0
     video = video.permute(1, 2, 3, 0).detach().cpu().numpy()
+    first_frame = video[0, :, :, :]
+    first_frame = np.uint8(first_frame)
+    img = TF.to_pil_image(first_frame)
+    #img = Image.fromarray(first_frame, "RGB")
+    img.save(f"results/videos/{model_name}_original.png")
     for i in range(video_shape[2]):
         frame = video[i, :, :, :]
         frame = np.uint8(frame)
@@ -78,6 +84,11 @@ def save_video(video, decoded, split_size, model_name):
     decoded = decoded.squeeze(0)
     decoded = decoded * 255.0
     decoded = decoded.permute(1, 2, 3, 0).detach().cpu().numpy()
+    first_frame = decoded[0, :, :, :]
+    first_frame = np.uint8(first_frame)
+    img = TF.to_pil_image(first_frame)
+    #img = Image.fromarray(first_frame, "RGB")
+    img.save(f"results/videos/{model_name}_recon.png")
     for i in range(video_shape[2]):
         frame = decoded[i, :, :, :]
         frame = np.uint8(frame)
@@ -102,9 +113,9 @@ def prep_timeseries(timeseries):
     for idx, t in enumerate(timeseries):
         nan_mask = torch.isnan(t)
         # Replace NaN values with 0 using boolean masking
-        t[nan_mask] = -999
-        missing_mask = t.eq(-999)
-        # Replace -999 with -1
+        t[nan_mask] = -99
+        missing_mask = t.eq(-99)
+        # Replace -99 with -1
         #t[missing_mask] = 0.0
         mask = nan_mask | missing_mask
         masks.append(mask)
@@ -117,7 +128,7 @@ def save_plots(model_arg, latent_dim, hidden_dim, split_size):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # Get arguments from file
     # Define the model architecture, make sure it matches with model 
-    model = model_arg(input_dims= [(64 // split_size, 128, 128, 3), (200 // split_size, 352)], latent_dim=latent_dim, hidden_layers = [[128, 256, 512, 512], hidden_dim, 3], dropout= 0.2).to(device)
+    model = model_arg(input_dims= [(64 // split_size, 256, 256, 3), (256 // split_size, 352)], latent_dim=latent_dim, hidden_layers = [[32, 64, 128, 256], hidden_dim, 2], dropout= 0.2).to(device)
     model_name = model.__class__.__name__
     # Load the model state
     if split_size > 1:
@@ -168,8 +179,8 @@ def save_plots(model_arg, latent_dim, hidden_dim, split_size):
         save_video(video, recon_video, split_size=split_size, model_name=model_name)
 
 if __name__ == "__main__":
-    latent_dim = 64
-    hidden_dim = 1024
+    latent_dim = 32
+    hidden_dim = 512
     split_size = 4
-    save_plots(MidMVAE, latent_dim, hidden_dim, split_size)
+    save_plots(TimeseriesVAE, latent_dim, hidden_dim, split_size)
     print("Finished")

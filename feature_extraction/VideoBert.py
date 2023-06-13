@@ -11,13 +11,13 @@ class VideoBERT(nn.Module):
         padding = (1, 1, 1)
         transformer_layers = 2
         output_size = input_dims[0][1]
-        for _ in range(4):
+        cnn_filters = hidden_layers[0]
+        for _ in range(len(cnn_filters)):
             output_size = int((output_size - kernel_size[1] + 2*padding[1])/stride[1]) + 1
         self.transformer_d_model = hidden_layers[0][-1]
         transformer_num_heads = 8
         transformer_dff = 2048
         transformer_dropout = dropout
-        cnn_filters = hidden_layers[0][:-1]
         cnn_layers = []
         in_channels = input_dims[0][3]
         # Define 3D CNN encoder
@@ -26,7 +26,7 @@ class VideoBERT(nn.Module):
             cnn_layers.append(nn.LeakyReLU(inplace=True))
             #cnn_layers.append(nn.BatchNorm3d(cnn_filters[i]))
             in_channels = cnn_filters[i]
-        cnn_layers.append(nn.MaxPool3d(kernel_size = (3, 4, 4), stride = (1, 2, 2), padding = 1))
+        #cnn_layers.append(nn.MaxPool3d(kernel_size = (3, 4, 4), stride = (1, 2, 2), padding = 1))
         self.cnn_encoder = nn.Sequential(*cnn_layers)
 
         self.fc_middle = nn.Linear(in_channels * output_size ** 2, self.transformer_d_model)
@@ -94,7 +94,7 @@ class VideoBERT(nn.Module):
         # Add special token
         special_token = torch.zeros((cnn_encoded.size(0), 1, cnn_encoded.size(2)))
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        special_token = torch.sub(special_token, -999).to(device)
+        special_token = torch.sub(special_token, -99).to(device)
         cnn_encoded = torch.cat([special_token, cnn_encoded], dim = 1)
         # Encode CNN output using Transformer encoder
         encoded_features = self.transformer_encoder(cnn_encoded)[:, 1:, :]

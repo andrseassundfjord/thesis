@@ -41,8 +41,8 @@ def mask_features(tensor, batch_size, num_features):
             while cont:
                 batch_idx = random.randint(0, masked.size(0) - 1)
                 feature_idx = random.randint(0, masked.size(2) - 1)
-                cont = (-999 in masked[batch_idx, :, feature_idx])
-                masked[batch_idx, :, feature_idx] = -999
+                cont = (-99 in masked[batch_idx, :, feature_idx])
+                masked[batch_idx, :, feature_idx] = -99
     return masked
 
 def reg_loss(model):
@@ -51,7 +51,7 @@ def reg_loss(model):
     for param in model.parameters():
         reg_loss += torch.sum(torch.square(param))
     # Total loss
-    return 0.001 * reg_loss
+    return 0.01 * reg_loss
 
 def mape_calc(y_true, y_pred):
     if len(y_true.size()) < 3:
@@ -72,6 +72,7 @@ def kmeans_loss(z, split_size = 4):
     means = group_by_mod32_mean(z, split_size)
     for i in range(len(z)):
         mean_distances = [np.linalg.norm(z[i] - mean) for mean in means]
+        #mean_distances = [torch.norm(z[i] - mean) for mean in means]
         positive_mean = mean_distances[i % l]
         mean_distances[i % l] = math.inf
         loss += np.max(positive_mean - np.min(mean_distances) + margin, 0)
@@ -93,10 +94,10 @@ def prep_timeseries(timeseries):
     for idx, t in enumerate(timeseries):
         nan_mask = torch.isnan(t)
         # Replace NaN values with 0 using boolean masking
-        t[nan_mask] = -999
-        missing_mask = t.eq(-999)
-        # Replace -999 with -1
-        t[missing_mask] = -999
+        t[nan_mask] = -99
+        missing_mask = t.eq(-99)
+        # Replace -99 with -1
+        t[missing_mask] = -99
         mask = nan_mask | missing_mask
         masks.append(mask)
         # If features are continous
@@ -106,7 +107,7 @@ def prep_timeseries(timeseries):
             timeseries[idx] /= torch.add(timeseries[idx].max(-1, keepdim=True)[0], 0.000000001)
             nans = torch.isnan(timeseries[idx])
             timeseries[idx][nans] = 0.5
-            t[mask] -999
+            t[mask] -99
 
     return timeseries, masks
 
@@ -125,8 +126,13 @@ def run(
         timeseries_num_layers = 1,
         dropout = 0.1,
         save = False,
-        split_size  = 4
+        split_size  = 4,
+        resume = True,
+        test_only = False
     ):
+
+    if test_only:
+        num_epochs = 1
 
     print(f"Started: {savename}, Augmented run")
     # Set device
@@ -165,6 +171,8 @@ def run(
                     ).to(device)
 
     model_name = model.__class__.__name__
+    if resume:
+        model.load_state_dict(torch.load(f'augmented_models/{model_name}_state.pth'))
     print(f"Model: {model_name}")
 
     # Define loss function
@@ -174,7 +182,7 @@ def run(
     optimizer = optimizer_arg(model.parameters(), lr=lr)
 
     # LR scheduler
-    scheduler = ReduceLROnPlateau(optimizer, factor=0.1, patience=15) 
+    scheduler = ReduceLROnPlateau(optimizer, factor=0.1, patience=5) 
     print("Number of parameters in model: ", sum(p.numel() for p in model.parameters()))
 
 
@@ -195,89 +203,90 @@ def run(
     print("Start training", flush = True)
     for epoch in range(num_epochs):
         train_loss = 0
-        model.train()
-        for i, (video, timeseries) in enumerate(zip(video_train_loader, timeseries_train_loader)):
-            video_slices = torch.split(video, video.size(2) // split_size, dim=2)
-            timeseries_slices = [[] for _ in range(split_size)]
-            for t in timeseries:
-                split_t = torch.split(t, t.size(1) // split_size, dim = 1)
-                for idx, split in enumerate(split_t):
-                    timeseries_slices[idx].append(split)
-            samples = []
-            loss = 0
-            for j in range(4):
-                video = video_slices[j]
-                timeseries = timeseries_slices[j]
-                optimizer.zero_grad()
-                if model_name == "VideoVAE" or model_name == "VideoBERT" :
-                    # Move data to device
-                    video = video.to(device)
-                    # Forward pass
-                    recon_video, kl_divergence, latent, mus = model(video)
-                    loss += reconstruction_loss(recon_video, video)
-                    loss += kl_divergence
-                    samples.append(mus.to("cpu"))
-                elif model_name == "TimeseriesVAE" or model_name == "TimeBERT":
-                    # Move data to device
-                    timeseries = [t.to(device) for t in timeseries]
-                    timeseries, masks = prep_timeseries(timeseries)
-                    timeseries_input = [mask_features(t, batch_size, num_features_list[idx]).to(device) for idx, t in enumerate(timeseries)]
-                    # Forward pass
-                    recon_timeseries, kl_divergence, latent_representation, mus = model(timeseries_input)
-                    loss += kl_divergence
-                    recon_split = []
-                    recon_split.extend(torch.split(recon_timeseries[0], [t.size(2) for t in timeseries[:3]], dim=-1))
-                    recon_split.extend(torch.split(recon_timeseries[1], [t.size(2) for t in timeseries[3:5]], dim=-1))
-                    recon_split.extend(torch.split(recon_timeseries[2], [t.size(2) for t in timeseries[5:]], dim=-1))
-                    for idx, (recon, nan_mask, t) in enumerate(zip(recon_split, masks, timeseries)):
-                        if idx in [0, 1, 3, 5, 6]:
-                            recon = F.sigmoid(recon)
-                        loss += reconstruction_loss(recon[~nan_mask], t[~nan_mask])
-                    samples.append(mus.to("cpu"))
-                elif model_name == "VideoAutoencoder":
-                    # Move data to device
-                    video = video.to(device)
-                    # Forward pass
-                    reconstructed, latent_representation = model(video)
-                    loss += reconstruction_loss(reconstructed, video)
-                    samples.append(latent_representation.to("cpu"))
-                elif model_name == "HMAE":
-                    # Move data to device
-                    video = video.to(device)
-                    timeseries = [t.to(device) for t in timeseries]
-                    # Mask timeseries data
-                    timeseries, masks = prep_timeseries(timeseries)
-                    timeseries_input = [mask_features(t, batch_size, num_features_list[idx]).to(device) for idx, t in enumerate(timeseries)]
-                    # Forward pass
-                    original, reconstructed, kl_divergence, latent_representation, mus = model((video, timeseries_input))
-                    loss += kl_divergence + reconstruction_loss(reconstructed, original)
-                    samples.append(mus.to("cpu"))                    
-                else:
-                    # Move data to device
-                    video = video.to(device)
-                    timeseries = [t.to(device) for t in timeseries]
-                    # Mask timeseries data
-                    timeseries, masks = prep_timeseries(timeseries)
-                    timeseries_input = [mask_features(t, batch_size, num_features_list[idx]).to(device) for idx, t in enumerate(timeseries)]
-                    # Forward pass
-                    recon_video, recon_timeseries, kl_divergence, latent_representation, mus = model((video, timeseries_input))
-                    loss += kl_divergence + reconstruction_loss(recon_video, video)
-                    recon_split = []
-                    recon_split.extend(torch.split(recon_timeseries[0], [t.size(2) for t in timeseries[:3]], dim=-1))
-                    recon_split.extend(torch.split(recon_timeseries[1], [t.size(2) for t in timeseries[3:5]], dim=-1))
-                    recon_split.extend(torch.split(recon_timeseries[2], [t.size(2) for t in timeseries[5:]], dim=-1))
-                    for idx, (recon, nan_mask, t) in enumerate(zip(recon_split, masks, timeseries)):
-                        if idx in [0, 1, 3, 5, 6]:
-                            recon = F.sigmoid(recon)
-                        loss += reconstruction_loss(recon[~nan_mask], t[~nan_mask])
-                    samples.append(mus.to("cpu"))
-            loss += kmeans_loss(samples)
-            loss += reg_loss(model)
-            train_loss += loss.item()
-            loss.backward()
-            optimizer.step()
-            if model_name == "HMAE" and False:
-                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=2)
+        if not test_only:
+            model.train()
+            for i, (video, timeseries) in enumerate(zip(video_train_loader, timeseries_train_loader)):
+                video_slices = torch.split(video, video.size(2) // split_size, dim=2)
+                timeseries_slices = [[] for _ in range(split_size)]
+                for t in timeseries:
+                    split_t = torch.split(t, t.size(1) // split_size, dim = 1)
+                    for idx, split in enumerate(split_t):
+                        timeseries_slices[idx].append(split)
+                samples = []
+                loss = 0
+                for j in range(4):
+                    video = video_slices[j]
+                    timeseries = timeseries_slices[j]
+                    optimizer.zero_grad()
+                    if model_name == "VideoVAE" or model_name == "VideoBERT" :
+                        # Move data to device
+                        video = video.to(device)
+                        # Forward pass
+                        recon_video, kl_divergence, latent, mus = model(video)
+                        loss += reconstruction_loss(recon_video, video)
+                        loss += kl_divergence
+                        samples.append(mus.to("cpu"))
+                    elif model_name == "TimeseriesVAE" or model_name == "TimeBERT":
+                        # Move data to device
+                        timeseries = [t.to(device) for t in timeseries]
+                        timeseries, masks = prep_timeseries(timeseries)
+                        timeseries_input = [mask_features(t, batch_size, num_features_list[idx]).to(device) for idx, t in enumerate(timeseries)]
+                        # Forward pass
+                        recon_timeseries, kl_divergence, latent_representation, mus = model(timeseries_input)
+                        loss += kl_divergence
+                        recon_split = []
+                        recon_split.extend(torch.split(recon_timeseries[0], [t.size(2) for t in timeseries[:3]], dim=-1))
+                        recon_split.extend(torch.split(recon_timeseries[1], [t.size(2) for t in timeseries[3:5]], dim=-1))
+                        recon_split.extend(torch.split(recon_timeseries[2], [t.size(2) for t in timeseries[5:]], dim=-1))
+                        for idx, (recon, nan_mask, t) in enumerate(zip(recon_split, masks, timeseries)):
+                            if idx in [0, 1, 3, 5, 6]:
+                                recon = torch.sigmoid(recon)
+                            loss += reconstruction_loss(recon[~nan_mask], t[~nan_mask])
+                        samples.append(mus.to("cpu"))
+                    elif model_name == "VideoAutoencoder":
+                        # Move data to device
+                        video = video.to(device)
+                        # Forward pass
+                        reconstructed, latent_representation = model(video)
+                        loss += reconstruction_loss(reconstructed, video)
+                        samples.append(latent_representation.to("cpu"))
+                    elif model_name == "HMAE":
+                        # Move data to device
+                        video = video.to(device)
+                        timeseries = [t.to(device) for t in timeseries]
+                        # Mask timeseries data
+                        timeseries, masks = prep_timeseries(timeseries)
+                        timeseries_input = [mask_features(t, batch_size, num_features_list[idx]).to(device) for idx, t in enumerate(timeseries)]
+                        # Forward pass
+                        original, reconstructed, kl_divergence, latent_representation, mus = model((video, timeseries_input))
+                        loss += kl_divergence + reconstruction_loss(reconstructed, original)
+                        samples.append(mus.to("cpu"))                    
+                    else:
+                        # Move data to device
+                        video = video.to(device)
+                        timeseries = [t.to(device) for t in timeseries]
+                        # Mask timeseries data
+                        timeseries, masks = prep_timeseries(timeseries)
+                        timeseries_input = [mask_features(t, batch_size, num_features_list[idx]).to(device) for idx, t in enumerate(timeseries)]
+                        # Forward pass
+                        recon_video, recon_timeseries, kl_divergence, latent_representation, mus = model((video, timeseries_input))
+                        loss += kl_divergence + reconstruction_loss(recon_video, video)
+                        recon_split = []
+                        recon_split.extend(torch.split(recon_timeseries[0], [t.size(2) for t in timeseries[:3]], dim=-1))
+                        recon_split.extend(torch.split(recon_timeseries[1], [t.size(2) for t in timeseries[3:5]], dim=-1))
+                        recon_split.extend(torch.split(recon_timeseries[2], [t.size(2) for t in timeseries[5:]], dim=-1))
+                        for idx, (recon, nan_mask, t) in enumerate(zip(recon_split, masks, timeseries)):
+                            if idx in [0, 1, 3, 5, 6]:
+                                recon = torch.sigmoid(recon)
+                            loss += reconstruction_loss(recon[~nan_mask], t[~nan_mask])
+                        samples.append(mus.to("cpu"))
+                loss += kmeans_loss(samples)
+                loss += reg_loss(model)
+                train_loss += loss.item()
+                loss.backward()
+                optimizer.step()
+                if model_name == "HMAE" and False:
+                    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=2)
         train_loss /= len(video_train_loader.dataset)
         train_losses.append(train_loss)
 
@@ -332,7 +341,7 @@ def run(
                         recon_split.extend(torch.split(recon_timeseries[2], [t.size(2) for t in timeseries[5:]], dim=-1))
                         for idx, (recon, nan_mask, t, random_mask) in enumerate(zip(recon_split, masks, timeseries, random_masks)):
                             if idx in [0, 1, 3, 5, 6]:
-                                recon = F.sigmoid(recon)
+                                recon = torch.sigmoid(recon)
                             time_loss += reconstruction_loss(recon[~nan_mask], t[~nan_mask])
                             mape_time += mape_calc(y_true=t[~nan_mask], y_pred=recon[~nan_mask]) / 8
                             mape_masked += mape_calc(y_true=t[~random_mask], y_pred=recon[~random_mask]) / 8
@@ -369,7 +378,7 @@ def run(
                         timeseries_input = [mask_features(t, batch_size, num_features_list[idx]).to(device) for idx, t in enumerate(timeseries)]
                         random_masks = []
                         for missing_mask, t in zip(masks, timeseries_input):
-                            random_mask = t.eq(-999)
+                            random_mask = t.eq(-99)
                             mask = torch.logical_and(random_mask, ~missing_mask)
                             random_masks.append(mask)
                         # Forward pass
@@ -384,7 +393,7 @@ def run(
                         time_loss = 0
                         for idx, (recon, nan_mask, t, random_mask) in enumerate(zip(recon_split, masks, timeseries, random_masks)):
                             if idx in [0, 1, 3, 5, 6]:
-                                recon = F.sigmoid(recon)
+                                recon = torch.sigmoid(recon)
                             time_loss += reconstruction_loss(recon[~nan_mask], t[~nan_mask])
                             mape_time += mape_calc(y_true=t[~nan_mask], y_pred=recon[~nan_mask]) / 8
                             mape_masked += mape_calc(y_true=t[random_mask], y_pred=recon[random_mask]) / 8
@@ -411,13 +420,15 @@ def run(
         if test_loss < best_val_loss:
             best_val_loss = test_loss
             best_val_loss_epoch = epoch
-            if save:
+            if save and not test_only:
                 torch.save(model.state_dict(), f'augmented_models/{type(model).__name__}_state.pth')
         # Print loss
-        if ( epoch + 1 ) % 10 == 0:
-            end_time = time.time()
-            print(f"Time taken: {end_time - start_time:.2f} seconds")
-            print('Epoch: {} \t Train Loss: {:.6f}\t Test Loss: {:.6f}'.format(epoch, train_loss, test_loss), flush = True)
+        end_time = time.time()
+        print(f"Time taken: {end_time - start_time:.2f} seconds")
+        print('Epoch: {} \t Train Loss: {:.6f}\t Test Loss: {:.6f}'.format(epoch, train_loss, test_loss), flush = True)
+
+        if epoch > (best_val_loss_epoch + 30):
+            break
 
     print("Finished training")
     end_time = time.time()
@@ -430,15 +441,17 @@ def run(
     print(f"Timeseries MAPE: {mapes_time[best_val_loss_epoch]:.6f}")
     print(f"Video MAPE: {mapes_video[best_val_loss_epoch]:.6f}")
     print(f"Masked MAPE: {mapes_masked[best_val_loss_epoch]:.6f}")
-    plot_loss(train_losses, test_losses, "results/loss_plots/{}".format(savename), num_epochs)
-    plot_loss_individual(test_losses_time, test_losses_video, "results/loss_plots/{}_individual".format(savename), num_epochs)
-    num_params = sum(p.numel() for p in model.parameters())
+    if not test_only:
+        plot_loss(train_losses, test_losses, "results/loss_plots/{}".format(savename), num_epochs)
+        plot_loss_individual(test_losses_time, test_losses_video, "results/loss_plots/{}_individual".format(savename), num_epochs)
+        num_params = sum(p.numel() for p in model.parameters())
 
-    hyperparameters = [savename, type(model).__name__, end_time - start_time, train_losses[-1], test_losses[-1], num_params, lr, num_epochs, batch_size, 
-                        latent_dim, input_dims[0], input_dims[1], video_hidden_shape, timeseries_num_layers, timeseries_hidden_dim,
-                        "LeakyReLU", dropout, "dropout, kl div", type(optimizer).__name__, type(scheduler).__name__, "kaiminghe_uniform, xavier for lstm", "None", "Yes", ""]
+        hyperparameters = [savename, type(model).__name__, end_time - start_time, train_losses[-1], test_losses[-1], num_params, lr, num_epochs, batch_size, 
+                            latent_dim, input_dims[0], input_dims[1], video_hidden_shape, timeseries_num_layers, timeseries_hidden_dim,
+                            "LeakyReLU", dropout, "dropout, kl div", type(optimizer).__name__, type(scheduler).__name__, "kaiminghe_uniform, xavier for lstm", "None", "Yes", ""]
 
-    write_hyperparameters_to_file(hyperparameters, "results/hyperparameters.csv")
+        write_hyperparameters_to_file(hyperparameters, "results/hyperparameters.csv")
+    save_num_frames(video_train_loader=video_train_loader, video_test_loader=video_test_loader)
 
 def write_hyperparameters_to_file(hyperparameters, file_path):
     """
@@ -500,36 +513,35 @@ def plot_num_frames(num_frames):
     # Get the keys and values as lists
     x_values = list(num_frames.keys())
     y_values = list(num_frames.values())
+    #plt.rcParams.update({'font.size': 28, "xtick.labelsize": 24, "ytick.labelsize": 24, "axes.titlesize": 28, "figure.titlesize": 28})
 
     # Set the y-axis to a logarithmic scale
     plt.yscale('log')
     # Create the bar plot
+    #plt.figure(figsize=(15, 12))
     plt.bar(x_values, y_values)
-    plt.xlabel('Frames')
-    plt.ylabel('Log Number of Samples')
-    plt.title('Histogram of Frames')
+    plt.xlabel('Frames', fontsize=16)
+    plt.ylabel('Log number of samples', fontsize=16)
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    #plt.title('Histogram of Frames')
     plt.savefig("results/frame_stats_log")
 
 if __name__ == "__main__":
 
-    """
-    Test:
-    1. -999 -> -99 -> -9
-    2. latent 32 if positive results
-    """
 
-    model_arg = VideoAutoencoder
-    latent_dim = 64
-    video_hidden_shape = [64, 128, 256, 512]
+    model_arg = TimeBERT
+    latent_dim = 32
+    video_hidden_shape = [32, 64, 128, 256]
     timeseries_hidden_dim = 512
-    timeseries_num_layers = 3
+    timeseries_num_layers = 2
     hidden_layers = [video_hidden_shape, timeseries_hidden_dim, timeseries_num_layers]
     split_size = 4
 
     print(f"Latent dimension: {latent_dim}, Hidden dimension {timeseries_hidden_dim}, Split size {split_size}")
 
     run(
-        "VideoAE_reduced_parameters",
+        "TimeBERT_1024_256x256",
         load = True, # Load dataloaders
         train_ratio = 0.7,
         batch_size = 32,
@@ -543,14 +555,16 @@ if __name__ == "__main__":
         timeseries_num_layers = timeseries_num_layers,
         dropout = 0.2,
         save = True,
-        split_size = split_size
+        split_size = split_size,
+        resume = True,
+        test_only = True
     )
 
-    run_clustering(model_arg, latent_dim, hidden_layers, split_size = split_size)
-    run_gmm_classification(model_arg, latent_dim, hidden_layers, split_size = split_size)
+    #run_clustering(model_arg, latent_dim, hidden_layers, split_size = split_size)
+    #run_gmm_classification(model_arg, latent_dim, hidden_layers, split_size = split_size)
     run_gmm_classification(model_arg, latent_dim, hidden_layers, split_size = split_size, classes_list=[1, 5, 9])
-    train_test_classification(model_arg, epochs=60, lr=0.1, latent_dim=latent_dim, hidden_dim=1024, hidden_layers=hidden_layers, split_size = split_size)
-    train_test_classification(model_arg, epochs=60, lr=0.1, latent_dim=latent_dim, hidden_dim=1024, hidden_layers=hidden_layers, split_size = split_size, classes_list=[1, 5, 9])
-    train_test_risk(model_arg, epochs=60, lr=0.1, latent_dim=latent_dim, hidden_dim=1024, hidden_layers=hidden_layers, split_size = split_size)
+    #train_test_classification(model_arg, epochs=100, lr=0.001, latent_dim=latent_dim, hidden_dim=512, hidden_layers=hidden_layers, split_size = split_size)
+    train_test_classification(model_arg, epochs=100, lr=0.001, latent_dim=latent_dim, hidden_dim=512, hidden_layers=hidden_layers, split_size = split_size, classes_list=[1, 5, 9])
+    train_test_risk(model_arg, epochs=100, lr=0.001, latent_dim=latent_dim, hidden_dim=512, hidden_layers=hidden_layers, split_size = split_size)
 
     print("\nFinished")

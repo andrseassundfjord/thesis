@@ -17,3 +17,6 @@ Time taken: 5838.96 seconds
 Epoch: 39 	 Train Loss: 214799.636654	 Test Loss: 216944.559877
 Time taken: 7300.35 seconds
 Epoch: 49 	 Train Loss: 209667.031566	 Test Loss: 219416.612191
+Time taken: 8867.77 seconds
+Epoch: 59 	 Train Loss: 207949.378929	 Test Loss: 211166.689969
+slurmstepd: error: *** JOB 5600289 ON tuatara CANCELLED AT 2023-05-30T16:17:24 ***

@@ -136,3 +136,10 @@ dmypy.json
 
 /interpolated_pickles
 /resampled_pickles
+
+/GRU
+todo
+/final_final
+/final_logs
+/random_logs
+/diff_logs

@@ -133,10 +133,10 @@ def plot_together():
     plt.savefig("results/blink_rate_resampled_all")
     plt.clf()
     # Call the plot function for each dataset
-    fig1 = save_single_df(path, n_samples=50, test = True, interpolate=False)
-    fig2 = save_single_df(path, n_samples=100, test = True, interpolate=False)
-    fig3 = save_single_df(path, n_samples=150, test = True, interpolate=False)
-    fig4 = save_single_df(path, n_samples=200, test = True, interpolate=False)
+    fig1 = save_single_df(path, n_samples=100, test = True, interpolate=False)
+    fig2 = save_single_df(path, n_samples=150, test = True, interpolate=False)
+    fig3 = save_single_df(path, n_samples=200, test = True, interpolate=False)
+    fig4 = save_single_df(path, n_samples=256, test = True, interpolate=False)
     
     # Combine the subplots into a grid
     fig = plt.figure(figsize=(15, 12))
@@ -377,11 +377,11 @@ def get_feature_names():
 
 if __name__ == "__main__":
     path = "/work5/share/NEDO/nedo-2019/data/processed_rosbags_topickles/fixed_pickles"
-    plot_statistics()
+    #plot_statistics()
     #get_dataset_statistics()
     #get_n_samples()
     #compute_sample_correlation(n_files = 2000)
     #save_single_df(path, n_samples = 200, test=False, interpolate = True, normalize = True)
     #get_feature_names()
-    #plot_together()
+    plot_together()
     print("Finished")

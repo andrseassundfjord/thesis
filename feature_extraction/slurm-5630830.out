@@ -1,0 +1,26 @@
+
+Start risk score fine-tuning
+Epoch: 4 	 Train Loss: 245.177045	 Test Loss: 223.389280
+Epoch: 9 	 Train Loss: 96.320265	 Test Loss: 71.543437
+Epoch: 14 	 Train Loss: 29.205452	 Test Loss: 40.498098
+Epoch: 19 	 Train Loss: 16.993677	 Test Loss: 24.976977
+Epoch: 24 	 Train Loss: 8.238180	 Test Loss: 5.950271
+Epoch: 29 	 Train Loss: 7.186574	 Test Loss: 14.832502
+Epoch: 34 	 Train Loss: 3.672509	 Test Loss: 4.486625
+Epoch: 39 	 Train Loss: 3.739747	 Test Loss: 5.191531
+Epoch: 44 	 Train Loss: 2.210892	 Test Loss: 1.624846
+Epoch: 49 	 Train Loss: 1.080647	 Test Loss: 1.839330
+Epoch: 54 	 Train Loss: 1.444269	 Test Loss: 0.696437
+Epoch: 59 	 Train Loss: 1.214166	 Test Loss: 1.255200
+Epoch: 64 	 Train Loss: 1.392469	 Test Loss: 1.170085
+Epoch: 69 	 Train Loss: 1.874518	 Test Loss: 0.702463
+Epoch: 74 	 Train Loss: 0.857773	 Test Loss: 0.730918
+Epoch: 79 	 Train Loss: 1.118591	 Test Loss: 0.848872
+Finished training TimeBERT for risk score prediction
+Best test loss: 0.400580 at epoch: 66
+Start evaluation
+
+Evaluation of fine-tuned TimeBERT model
+
+MAPE Score: 28.901775360107422
+MAE: 2.061056613922119

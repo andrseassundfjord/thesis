@@ -26,7 +26,7 @@ class LabelDataset(Dataset):
         return self.labels[idx]
 
 class VideoDataset(Dataset):
-    def __init__(self, file_paths, frame_len = 64, size = 128):
+    def __init__(self, file_paths, frame_len = 64, size = 256):
         self.file_paths = file_paths
         self.num_frames = {}
         self.frame_len = frame_len
@@ -112,7 +112,7 @@ class DataFrameTimeseriesDataset(Dataset):
                 df_name = file_list[i].split("/")[-1].split(".")[0]
                 valid_cols = [col for col in cols if col in df.columns]
                 if len(valid_cols) == 0 and "standard" not in df_name:
-                    df_dict[df_name] = pd.DataFrame(data=[-999]*self.n_samples, columns=['empty']).values.astype(np.float32)
+                    df_dict[df_name] = pd.DataFrame(data=[-99]*self.n_samples, columns=['empty']).values.astype(np.float32)
                 else:
                     split_df = df[valid_cols].copy()
                     # Resample df, and interpolate or ffill based on continous or categorical values
@@ -165,7 +165,7 @@ class DataFrameTimeseriesDataset(Dataset):
         #data = data.values.astype(np.float32)
         return data_list
 
-def custom_collate(batch, padding_value=-999):
+def custom_collate(batch, padding_value=-99):
     # Get the longest length in the batch
     max_lens = [max([data[i].shape[1] for data in batch]) for i in range(len(batch[0]))]
 

@@ -1,6 +1,3 @@
-# Based on https://github.com/ShengjiaZhao/MMD-Variational-Autoencoder/blob/master/mmd_vae.ipynb
-# From https://github.com/nicktfranklin/VAE-video/blob/master/pytorch_vae.py
-
 import torch
 import torch.nn as nn
 import numpy as np
@@ -21,7 +18,7 @@ class Reshape(torch.nn.Module):
         return x.view(x.size(0), *self.outer_shape)
 
 class VideoEncoder(nn.Module):
-    def __init__(self, latent_dim, input_shape, hidden_shape, dropout):
+    def __init__(self, latent_dim, input_shape, hidden_shape, dropout, hidden_dim = 512):
         super(VideoEncoder, self).__init__()
         self.n_frames = input_shape[0]
         self.height = input_shape[1]
@@ -39,16 +36,18 @@ class VideoEncoder(nn.Module):
             nn.Conv3d(self.hs[1], self.hs[2], kernel_size = 4, stride = 2, padding = 1),
             #nn.BatchNorm3d(self.hs[2]),
             nn.LeakyReLU(),
-            nn.MaxPool3d(kernel_size = (3, 4, 4), stride = (1, 2, 2), padding = 1),
+            nn.Conv3d(self.hs[2], self.hs[3], kernel_size = 4, stride = 2, padding = 1),
+            nn.LeakyReLU(),
+            #nn.MaxPool3d(kernel_size = (3, 4, 4), stride = (1, 2, 2), padding = 1),
             Flatten(),
             nn.Dropout(dropout),
-            nn.Linear(int(self.hs[2] * self.width * self.height * self.n_frames / (8 * 16 * 16)), self.hs[3]),
+            nn.Linear(int(self.hs[3] * self.width * self.height * self.n_frames / (16 * 16 * 16)), hidden_dim),
             #nn.BatchNorm1d(self.hs[3]),
             nn.LeakyReLU()
         ])
         
-        self.fc_mu = nn.Linear(self.hs[3], latent_dim)
-        self.fc_log_var = nn.Linear(self.hs[3], latent_dim)
+        self.fc_mu = nn.Linear(hidden_dim, latent_dim)
+        self.fc_log_var = nn.Linear(hidden_dim, latent_dim)
 
         # Weight init
         for m in self.model:
@@ -83,7 +82,7 @@ class VideoEncoder(nn.Module):
         return z, mu, log_var
 
 class VideoEncoderPretrained(nn.Module):
-    def __init__(self, latent_dim, input_shape, hidden_shape, dropout):
+    def __init__(self, latent_dim, input_shape, hidden_shape, dropout, hidden_dim = 512):
         super(VideoEncoderPretrained, self).__init__()
         self.n_frames = input_shape[0]
         self.height = input_shape[1]
@@ -121,7 +120,7 @@ class VideoEncoderPretrained(nn.Module):
         return z, mu, log_var
 
 class VideoDecoder(nn.Module):
-    def __init__(self, latent_dim, input_shape, hidden_shape, dropout):
+    def __init__(self, latent_dim, input_shape, hidden_shape, dropout, hidden_dim = 512):
         super(VideoDecoder, self).__init__()
         self.n_frames = input_shape[0]
         self.height = input_shape[1]
@@ -130,14 +129,16 @@ class VideoDecoder(nn.Module):
         self.hs = hidden_shape
 
         self.model = nn.ModuleList([
-            nn.Linear(latent_dim, self.hs[3]),
+            nn.Linear(latent_dim, hidden_dim),
             #nn.BatchNorm1d(self.hs[3]),
             nn.LeakyReLU(),
-            nn.Linear(self.hs[3], int(self.hs[2] * self.width * self.height * self.n_frames / (8 ** 3))),
+            nn.Linear(hidden_dim, int(self.hs[3] * self.width * self.height * self.n_frames / (16 ** 3))),
             #nn.BatchNorm1d(int(self.hs[2] * self.width * self.height * self.n_frames / (8 ** 3))),
             nn.LeakyReLU(),
             nn.Dropout(dropout),
-            Reshape((self.hs[2], int(self.n_frames / 8), int(self.width / 8), int(self.height / 8))),
+            Reshape((self.hs[3], int(self.n_frames / 16), int(self.width / 16), int(self.height / 16))),
+            nn.ConvTranspose3d(self.hs[3], self.hs[2], kernel_size=4, stride=2, padding=1),
+            nn.LeakyReLU(),
             nn.ConvTranspose3d(self.hs[2], self.hs[1], kernel_size=4, stride=2, padding=1),
             #nn.BatchNorm3d(self.hs[1]),
             nn.LeakyReLU(),
@@ -165,8 +166,6 @@ class VideoDecoder(nn.Module):
             #print(layer, x.size())
         return x
 
-# Based on https://github.com/cerlymarco/MEDIUM_NoteBook/blob/master/VAE_TimeSeries/VAE_TimeSeries.ipynb
-
 class TimeseriesEncoder(nn.Module):
     def __init__(self, input_dim, hidden_dim, latent_dim, dropout, num_layers=1, categorical_cols=None, embedding_dim = 16, seq_len = 200):
         super(TimeseriesEncoder, self).__init__()
@@ -177,7 +176,7 @@ class TimeseriesEncoder(nn.Module):
         self.categorical_cols = categorical_cols
         self.bidirectional = False
         self.embedding_dim = embedding_dim
-        self.mask_value = -999
+        self.mask_value = -99
         
         if categorical_cols is not None:
             self.embeddings = nn.ModuleList([nn.Embedding(num_embeddings=num_cardinals, embedding_dim=embedding_dim)

@@ -19,7 +19,7 @@ class MidMVAE(nn.Module):
         # Video
         self.video_encoder = VideoEncoder(latent_dim = latent_dim, 
                                             input_shape = self.video_input_shape,
-                                            cnn_filters=hidden_layers[0][:-1],
+                                            cnn_filters=hidden_layers[0],
                                             hidden_dim = self.hidden_dim,
                                             dropout = dropout
                                         )
@@ -204,7 +204,7 @@ class Encoder(nn.Module):
     def forward(self, x):
         special_token = torch.zeros((x.size(0), 1, x.size(2)))
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        special_token = torch.sub(special_token, -999).to(device)
+        special_token = torch.sub(special_token, -99).to(device)
         x = torch.cat([special_token, x], dim = 1)
         encoded_features = self.transformer_encoder(x)[:, 1:, :]
         # Take the last encoded frame as the representation of the input video
@@ -264,7 +264,7 @@ class TimeseriesEncoder(nn.Module):
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
         self.categorical_cols = categorical_cols
-        self.mask_value = -999
+        self.mask_value = -99
         self.embedding_dim = embedding_dim
         
         if categorical_cols is not None:
@@ -389,7 +389,7 @@ class VideoEncoder(nn.Module):
         padding = (1, 1, 1)
 
         output_size = input_shape[1]
-        for _ in range(4):
+        for _ in range(len(cnn_filters)):
             output_size = int((output_size - kernel_size[1] + 2*padding[1])/stride[1]) + 1
 
         cnn_layers = []
@@ -401,7 +401,7 @@ class VideoEncoder(nn.Module):
             cnn_layers.append(nn.Dropout(dropout))
             #cnn_layers.append(nn.MaxPool3d(kernel_size = kernel_size, stride = stride, padding = padding))
             in_channels = cnn_filters[i]
-        cnn_layers.append(nn.MaxPool3d(kernel_size = (3, 4, 4), stride = (1, 2, 2), padding = 1))
+        #cnn_layers.append(nn.MaxPool3d(kernel_size = (3, 4, 4), stride = (1, 2, 2), padding = 1))
         self.cnn_encoder = nn.Sequential(*cnn_layers)
 
 
@@ -446,15 +446,17 @@ class VideoDecoder(nn.Module):
         padding = (1, 1, 1)
 
         output_size = input_shape[1]
-        for _ in range(3):
+        for _ in range(len(hidden_shape)):
             output_size = int((output_size - kernel_size[1] + 2*padding[1])/stride[1]) + 1
 
         self.model = nn.ModuleList([
-            nn.Linear(hidden_dim, self.hs[2] * output_size ** 2),
+            nn.Linear(hidden_dim, self.hs[3] * output_size ** 2),
             #nn.BatchNorm2d(self.hs[2] * output_size ** 2),
             nn.LeakyReLU(),
             nn.Dropout(dropout),
-            Reshape((self.hs[2], self.n_frames, output_size, output_size)),
+            Reshape((self.hs[3], self.n_frames, output_size, output_size)),
+            nn.ConvTranspose3d(self.hs[3], self.hs[2], kernel_size=kernel_size, stride=stride, padding=padding),
+            nn.LeakyReLU(),
             nn.ConvTranspose3d(self.hs[2], self.hs[1], kernel_size=kernel_size, stride=stride, padding=padding),
             #nn.BatchNorm3d(self.hs[1]),
             nn.LeakyReLU(),

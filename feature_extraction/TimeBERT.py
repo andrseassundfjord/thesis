@@ -181,7 +181,7 @@ class Encoder(nn.Module):
     def forward(self, x):
         special_token = torch.zeros((x.size(0), 1, x.size(2)))
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        special_token = torch.sub(special_token, -999).to(device)
+        special_token = torch.sub(special_token, -99).to(device)
         x = torch.cat([special_token, x], dim = 1)
         encoded_features = self.transformer_encoder(x)[:, 1:, :]
         # Take the last encoded frame as the representation of the input video
@@ -242,7 +242,7 @@ class TimeseriesEncoder(nn.Module):
         self.hidden_dim = hidden_dim
         self.categorical_cols = categorical_cols
         self.embedding_dim = embedding_dim
-        self.mask_value = -999
+        self.mask_value = -99
         
         if categorical_cols is not None:
             self.embeddings = nn.ModuleList([nn.Embedding(num_embeddings=num_cardinals, embedding_dim=embedding_dim)

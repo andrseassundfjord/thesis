@@ -1,0 +1,11 @@
+
+Start risk score fine-tuning
+Epoch: 4 	 Train Loss: 0.661654	 Test Loss: 0.656932
+Epoch: 9 	 Train Loss: 0.605304	 Test Loss: 0.600135
+Epoch: 14 	 Train Loss: 0.520795	 Test Loss: 0.495015
+Epoch: 19 	 Train Loss: 0.344070	 Test Loss: 0.343464
+Epoch: 24 	 Train Loss: 0.165433	 Test Loss: 0.148167
+Epoch: 29 	 Train Loss: 0.071259	 Test Loss: 0.055474
+Epoch: 34 	 Train Loss: 0.032279	 Test Loss: 0.040637
+Epoch: 39 	 Train Loss: 0.018506	 Test Loss: 0.015661
+Epoch: 44 	 Train Loss: 0.020421	 Test Loss: 0.015661

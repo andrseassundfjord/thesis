@@ -19,7 +19,7 @@ from TimeBERT import TimeBERT
 from MidMVAE import MidMVAE
 from HMAE import HMAE
 import math
-from sklearn.metrics import confusion_matrix, f1_score
+from sklearn.metrics import confusion_matrix, f1_score, accuracy_score
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -34,18 +34,18 @@ def reg_loss(model):
 class SimpleModel(nn.Module):
     def __init__(self, input_dim, hidden_dim, num_classes):
         super(SimpleModel, self).__init__()
-        self.fc1 = nn.Linear(input_dim, num_classes)
-        #self.fc2 = nn.Linear(hidden_dim, num_classes)
+        self.fc1 = nn.Linear(input_dim, hidden_dim)
+        self.fc2 = nn.Linear(hidden_dim, num_classes)
 
         init.uniform_(self.fc1.weight)
-        #init.uniform_(self.fc2.weight)
+        init.uniform_(self.fc2.weight)
     
     def forward(self, x):
         x = self.fc1(x)
         x = nn.functional.relu(x)
-        #x = self.fc2(x)
-        #x = nn.functional.relu(x)
-        #x = nn.functional.softmax(x, dim=1)
+        x = self.fc2(x)
+        x = nn.functional.relu(x)
+
         return x
 
 def prep_timeseries(timeseries):
@@ -53,10 +53,10 @@ def prep_timeseries(timeseries):
     for idx, t in enumerate(timeseries):
         nan_mask = torch.isnan(t)
         # Replace NaN values with 0 using boolean masking
-        t[nan_mask] = -999
-        missing_mask = t.eq(-999)
-        # Replace -999 with -1
-        t[missing_mask] = -999
+        t[nan_mask] = -99
+        missing_mask = t.eq(-99)
+        # Replace -99 with -1
+        t[missing_mask] = -99
         mask = nan_mask | missing_mask
         masks.append(mask)
         # If features are continous
@@ -66,7 +66,7 @@ def prep_timeseries(timeseries):
             timeseries[idx] /= torch.add(timeseries[idx].max(-1, keepdim=True)[0], 0.000000001)
             nans = torch.isnan(timeseries[idx])
             timeseries[idx][nans] = 0.5
-            t[mask] -999
+            t[mask] -99
 
     return timeseries
 
@@ -77,7 +77,7 @@ def train_test_classification(model, epochs = 100, lr = 0.1, latent_dim = 32, hi
     print("\nStart classification fine-tuning")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # Define the model architecture
-    pretrained_model = model(input_dims= [(64 // split_size, 128, 128, 3), (256 // split_size, 352)], latent_dim=latent_dim, 
+    pretrained_model = model(input_dims= [(64 // split_size, 256, 256, 3), (256 // split_size, 352)], latent_dim=latent_dim, 
                     hidden_layers = hidden_layers, dropout= 0.2).to(device)
 
     model_name = pretrained_model.__class__.__name__
@@ -245,6 +245,8 @@ def train_test_classification(model, epochs = 100, lr = 0.1, latent_dim = 32, hi
         # Print loss
         if ( epoch + 1 ) % 5 == 0:
             print('Epoch: {} \t Train Loss: {:.6f}\t Test Loss: {:.6f}'.format(epoch, train_loss, test_loss), flush = True)
+        if epoch > best_val_loss_epoch + 15:
+            break
 
     plot_loss(train_losses=train_losses, test_losses=test_losses, savename=f"results/loss_plots/simple_class_{model_name}", num_epochs=epochs)
 
@@ -337,40 +339,52 @@ def evaluate(pretrained_model, model_name, latent_dim = 32, hidden_dim = 256, sp
     
     cm = confusion_matrix(labels, y_preds)
     f1 = f1_score(labels, y_preds, average="weighted")
+    acc = accuracy_score(labels, y_preds)
     label_ticks = [str(c) for c in classes_list]
 
     print(f"\nEvaluation of fine-tuned {model_name} model\n")
 
-    print("Confusion matrix")
-    print(label_ticks)
-    for idx, line in enumerate(cm):
-        print(f"{idx+1} {line}")
+    #print("Confusion matrix")
+    #print(label_ticks)
+    #for idx, line in enumerate(cm):
+    #    print(f"{idx+1} {line}")
 
     cm_norm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
     plt.clf()
-    sns.set(font_scale=1.2, rc = {'figure.figsize':(10, 8)}) # adjust the font size
+    sns.set(font_scale=1.5, rc = {'figure.figsize':(15, 12)}) # adjust the font size
     sns.heatmap(cm_norm, annot=False, fmt='.2f', xticklabels= label_ticks, yticklabels=label_ticks, cmap='Reds')
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
     plt.savefig(f"results/classification_results/{model_name}_confusion_matrix")
     
     print(f"F1 Score: {f1}")
+    print(f"Accuracy: {acc}", flush = True)
+
 
 def plot_loss(train_losses, test_losses, savename, num_epochs):
     # Plot the training and testing losses and accuracies
     plt.clf()
     fig, ax = plt.subplots(figsize=(12, 12))
-    ax.plot(np.linspace(1, num_epochs, num_epochs), train_losses, label='Training')
-    ax.plot(np.linspace(1, num_epochs, num_epochs), test_losses, label='Testing')
+    ax.plot(np.linspace(1, len(train_losses), len(train_losses)), train_losses, label='Training')
+    ax.plot(np.linspace(1, len(train_losses), len(train_losses)), test_losses, label='Testing')
     ax.set_title('Loss over Epochs')
     ax.set_xlabel('Epoch')
     ax.set_ylabel('Loss')
     ax.legend()
     plt.savefig(savename)
 
+def calc_std():
+    f1_scores = np.array([0.2932960611074359, 0.2553308175229437, 0.3043153150134501, 0.3605155252845558, 0.3134652628817942, 0.33146839614905904, 0.3098342406252461, 0.3136696453886199, 0.30997928956331405, 0.2624863840731026])
+    acc_scores = np.array([0.35777777777777775, 0.31444444444444447, 0.3388888888888889, 0.3933333333333333, 0.35777777777777775, 0.37444444444444447, 0.34444444444444444, 0.35444444444444445, 0.3466666666666667, 0.31333333333333335])
+    print(f"F1: \n Mean: {np.mean(f1_scores)}, std: {np.std(f1_scores)}")
+    print(f"Accuracy: \n Mean: {np.mean(acc_scores)}, std: {np.std(acc_scores)}")
+
 if __name__ == "__main__":
     torch.manual_seed(42)
     np.random.seed(42)
     hidden = 512
     latent_dim = 32
-    train_test_classification(MAE, epochs=50, lr=0.1, latent_dim=latent_dim, hidden_dim = 1024, hidden_layers=[[128, 256, 512, 512], hidden, 3], split_size=4, classes_list = [1, 5, 9])
+    calc_std()
+    #train_test_classification(VideoAutoencoder, epochs=100, lr=0.001, latent_dim=latent_dim, hidden_dim = 512, hidden_layers=[[32, 64, 128, 256], hidden, 2], split_size=4, classes_list = None)
+    #or i in range(10):
+    #    train_test_classification(VideoAutoencoder, epochs=100, lr=0.001, latent_dim=latent_dim, hidden_dim = 512, hidden_layers=[[32, 64, 128, 256], hidden, 2], split_size=4, classes_list = [1, 5, 9])

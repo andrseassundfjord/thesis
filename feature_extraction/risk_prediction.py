@@ -19,7 +19,7 @@ from MAE import MAE
 from HMAE import HMAE
 from VideoBERT_pretrained import VideoBERT_pretrained
 import math
-from sklearn.metrics import mean_absolute_percentage_error
+from sklearn.metrics import mean_absolute_percentage_error, mean_absolute_error
 from torch.optim.lr_scheduler import CosineAnnealingLR, ReduceLROnPlateau, StepLR
 
 def reg_loss(model):
@@ -33,16 +33,16 @@ def reg_loss(model):
 class SimpleModel(nn.Module):
     def __init__(self, input_dim, hidden_dim):
         super(SimpleModel, self).__init__()
-        self.fc1 = nn.Linear(input_dim, 1)
-        #self.fc2 = nn.Linear(hidden_dim, 1)  # num_classes is the number of classes in your classification task
+        self.fc1 = nn.Linear(input_dim, hidden_dim)
+        self.fc2 = nn.Linear(hidden_dim, 1)  # num_classes is the number of classes in your classification task
 
         init.uniform_(self.fc1.weight)
-        #init.uniform_(self.fc2.weight)
+        init.uniform_(self.fc2.weight)
         
     def forward(self, x):
         x = self.fc1(x)
-        #x = nn.functional.relu(x)
-        #x = self.fc2(x)
+        x = nn.functional.relu(x)
+        x = self.fc2(x)
         x = 10 * torch.sigmoid(x) - 5
         x = x.view(-1)
         return x
@@ -52,10 +52,10 @@ def prep_timeseries(timeseries):
     for idx, t in enumerate(timeseries):
         nan_mask = torch.isnan(t)
         # Replace NaN values with 0 using boolean masking
-        t[nan_mask] = -999
-        missing_mask = t.eq(-999)
-        # Replace -999 with -1
-        t[missing_mask] = -999
+        t[nan_mask] = -99
+        missing_mask = t.eq(-99)
+        # Replace -99 with -1
+        t[missing_mask] = -99
         mask = nan_mask | missing_mask
         masks.append(mask)
         # If features are continous
@@ -65,7 +65,7 @@ def prep_timeseries(timeseries):
             timeseries[idx] /= torch.add(timeseries[idx].max(-1, keepdim=True)[0], 0.000000001)
             nans = torch.isnan(timeseries[idx])
             timeseries[idx][nans] = 0.5
-            t[mask] -999
+            t[mask] -99
 
     return timeseries
 
@@ -79,10 +79,10 @@ def plot_difference(y_pred, y_true, model_name):
     plt.clf()
     x = np.linspace(1, len(y_pred), len(y_pred))
     fig, ax = plt.subplots()
-    ax.plot(x, y_pred, color="red", marker="o", label="Predicted")
-    ax.plot(x, y_true, ls="--", color="blue", marker="x", label="True value")
-    ax.set_ylabel("Risk score")
-    ax.set_xlabel("Data sample")
+    ax.plot(x, y_pred, color="red", marker="x", label="Predicted", linestyle = 'None', markersize = 6)
+    ax.plot(x, y_true, color="blue", marker=".", label="True value", linestyle = 'None', markersize = 6)
+    ax.set_ylabel("Risk score", fontsize=14)
+    ax.set_xlabel("Data sample", fontsize=14)
     ax.legend()
     plt.savefig(f"results/riskScore_results/{model_name}_scatter")
 
@@ -90,7 +90,7 @@ def train_test_risk(model, epochs = 100, lr = 0.01, latent_dim = 32, hidden_dim 
     print("\nStart risk score fine-tuning")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # Define the model architecture
-    pretrained_model = model(input_dims= [(64 // split_size, 128, 128, 3), (256 // split_size, 352)], latent_dim=latent_dim, 
+    pretrained_model = model(input_dims= [(64 // split_size, 256, 256, 3), (256 // split_size, 352)], latent_dim=latent_dim, 
                     hidden_layers = hidden_layers, dropout= 0.2).to(device)
 
     model_name = pretrained_model.__class__.__name__
@@ -236,6 +236,8 @@ def train_test_risk(model, epochs = 100, lr = 0.01, latent_dim = 32, hidden_dim 
         # Print loss
         if ( epoch + 1 ) % 5 == 0:
             print('Epoch: {} \t Train Loss: {:.6f}\t Test Loss: {:.6f}'.format(epoch, train_loss, test_loss), flush = True)
+        if epoch > best_val_loss_epoch + 15:
+            break
 
     print(f"Finished training {model_name} for risk score prediction")
     print(f"Best test loss: {best_val_loss:.6f} at epoch: {best_val_loss_epoch}")
@@ -310,14 +312,28 @@ def evaluate(pretrained_model, model_name, latent_dim, hidden_dim, split_size = 
     riskScores = torch.cat(riskScores, dim = 0)
     
     mape = mean_absolute_percentage_error(y_true=riskScores, y_pred=y_preds)
+    mae = mean_absolute_error(y_true=riskScores, y_pred=y_preds)
 
     print(f"\nEvaluation of fine-tuned {model_name} model\n")
     
     print(f"MAPE Score: {mape}")
+    print(f"MAE: {mae}", flush = True)
 
     plot_difference(y_pred=y_preds, y_true=riskScores, model_name=model_name)
 
 if __name__ == "__main__":
     torch.manual_seed(42)
     np.random.seed(42)
-    train_test_risk(MVAE, epochs=80, lr=0.1, latent_dim=2048, hidden_dim = 1024, hidden_layers=[[128, 256, 512, 512], 512, 3], split_size=4)
+    if False:
+        #for model in [VideoAutoencoder, VideoVAE, VideoBERT, TimeseriesVAE, TimeBERT, MAE, MVAE, MidMVAE, HMAE]:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        pretrained_model = HMAE(input_dims= [(64 // 4, 256, 256, 3), (256 // 4, 352)], latent_dim=32, 
+                        hidden_layers = [[32, 64, 128, 256], 512, 2], dropout= 0.2).to(device)
+
+        model_name = pretrained_model.__class__.__name__
+        pretrained_model.load_state_dict(torch.load(f'augmented_models/{model_name}_state.pth'))
+        print(model_name)
+        evaluate(pretrained_model, model_name, 32, 512, split_size = 4)
+    else:
+        for i in range(5):
+            train_test_risk(MidMVAE, epochs=100, lr=0.001, latent_dim=32, hidden_dim = 512, hidden_layers=[[32, 64, 128, 256], 512, 2], split_size=4)
