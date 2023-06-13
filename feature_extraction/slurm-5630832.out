@@ -37,3 +37,4 @@ Epoch: 39 	 Train Loss: 0.017580	 Test Loss: 0.016192
 Epoch: 44 	 Train Loss: 0.032880	 Test Loss: 0.020570
 Epoch: 49 	 Train Loss: 0.016120	 Test Loss: 0.014115
 Epoch: 54 	 Train Loss: 0.015515	 Test Loss: 0.013112
+Epoch: 59 	 Train Loss: 0.011713	 Test Loss: 0.011165
