@@ -1,6 +1,3 @@
-# Based on https://github.com/ShengjiaZhao/MMD-Variational-Autoencoder/blob/master/mmd_vae.ipynb
-# From https://github.com/nicktfranklin/VAE-video/blob/master/pytorch_vae.py
-
 import torch
 import torch.nn as nn
 import numpy as np
@@ -164,8 +161,6 @@ class VideoDecoder(nn.Module):
                 print("NaN in: Decoder ", layer)
             #print(layer, x.size())
         return x
-
-# Based on https://github.com/cerlymarco/MEDIUM_NoteBook/blob/master/VAE_TimeSeries/VAE_TimeSeries.ipynb
 
 class TimeseriesEncoder(nn.Module):
     def __init__(self, input_dim, hidden_dim, latent_dim, dropout, num_layers=1, categorical_cols=None, embedding_dim = 16, seq_len = 200):
