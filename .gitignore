@@ -143,3 +143,5 @@ todo
 /final_logs
 /random_logs
 /diff_logs
+*.log
+*.out
