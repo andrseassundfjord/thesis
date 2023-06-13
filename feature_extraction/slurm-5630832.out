@@ -13,3 +13,27 @@ Epoch: 49 	 Train Loss: 0.013618	 Test Loss: 0.012862
 Epoch: 54 	 Train Loss: 0.013239	 Test Loss: 0.013229
 Epoch: 59 	 Train Loss: 0.013076	 Test Loss: 0.012527
 Epoch: 64 	 Train Loss: 0.012913	 Test Loss: 0.012022
+Epoch: 69 	 Train Loss: 0.012755	 Test Loss: 0.011721
+Epoch: 74 	 Train Loss: 0.012132	 Test Loss: 0.012890
+Epoch: 79 	 Train Loss: 0.012381	 Test Loss: 0.012734
+Finished training MidMVAE for risk score prediction
+Best test loss: 0.011475 at epoch: 63
+Start evaluation
+
+Evaluation of fine-tuned MidMVAE model
+
+MAPE Score: 4.002101898193359
+MAE: 0.4518696963787079
+
+Start risk score fine-tuning
+Epoch: 4 	 Train Loss: 0.665274	 Test Loss: 0.668081
+Epoch: 9 	 Train Loss: 0.618074	 Test Loss: 0.610433
+Epoch: 14 	 Train Loss: 0.539797	 Test Loss: 0.524541
+Epoch: 19 	 Train Loss: 0.368161	 Test Loss: 0.351519
+Epoch: 24 	 Train Loss: 0.183378	 Test Loss: 0.163506
+Epoch: 29 	 Train Loss: 0.060462	 Test Loss: 0.045627
+Epoch: 34 	 Train Loss: 0.036821	 Test Loss: 0.058287
+Epoch: 39 	 Train Loss: 0.017580	 Test Loss: 0.016192
+Epoch: 44 	 Train Loss: 0.032880	 Test Loss: 0.020570
+Epoch: 49 	 Train Loss: 0.016120	 Test Loss: 0.014115
+Epoch: 54 	 Train Loss: 0.015515	 Test Loss: 0.013112

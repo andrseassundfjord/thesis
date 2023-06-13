@@ -336,4 +336,4 @@ if __name__ == "__main__":
         evaluate(pretrained_model, model_name, 32, 512, split_size = 4)
     else:
         for i in range(5):
-            train_test_risk(MidMVAE, epochs=100, lr=0.001, latent_dim=32, hidden_dim = 512, hidden_layers=[[32, 64, 128, 256], 512, 2], split_size=4)
+            train_test_risk(TimeBERT, epochs=100, lr=0.001, latent_dim=32, hidden_dim = 512, hidden_layers=[[32, 64, 128, 256], 512, 2], split_size=4)
